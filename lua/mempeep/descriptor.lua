@@ -123,7 +123,7 @@ end
 
 --- Read an address-sized integer without following it.
 -- @return RawAddr descriptor
-function M.RawAddr(fmt)
+function M.RawAddr()
   return { tag = "RawAddr" }
 end
 
