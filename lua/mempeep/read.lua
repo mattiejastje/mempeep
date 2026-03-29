@@ -130,7 +130,9 @@ read_value_impl.Array = function(desc, address, reader, tracer)
       break
     end
     local value
+    tracer:begin_element(cursor, i - 1) -- 0-based index
     cursor, value = read_value(desc.desc, cursor, reader, tracer)
+    tracer:end_element()
     arr[i] = value
   end
   return cursor, arr
@@ -163,22 +165,22 @@ read_value_impl.Vector = function(desc, address, reader, tracer)
 
   local vec = {}
   local vec_cursor = begin_ptr
-  local count = 0
+  local index = 0
   while vec_cursor and vec_cursor < end_ptr do
     local value
+    tracer:begin_element(vec_cursor, index)
     vec_cursor, value = read_value(desc.desc, vec_cursor, reader, tracer)
+    tracer:end_element()
     vec[#vec + 1] = value
-    count = count + 1
-    if count > desc.max_len then
+    index = index + 1
+    if index > desc.max_len then
       tracer:error(error_codes.VECTOR_TOO_LONG)
       return cursor, vec
     end
   end
-
   if vec_cursor and vec_cursor ~= end_ptr then
     tracer:error(error_codes.VECTOR_MISALIGNED)
   end
-
   return cursor, vec
 end
 
@@ -195,10 +197,12 @@ read_value_impl.CircularList = function(desc, address, reader, tracer)
 
   local list = {}
   local list_cursor = head_ptr
-  local count = 0
+  local index = 0
   repeat
     local node
+    tracer:begin_element(list_cursor, index)
     list_cursor, node = read_value(desc.desc, list_cursor, reader, tracer)
+    tracer:end_element()
     list[#list + 1] = node  -- save partial data even if read fails
     if not list_cursor then
       return cursor, list
@@ -209,8 +213,8 @@ read_value_impl.CircularList = function(desc, address, reader, tracer)
       return cursor, list
     end
     list_cursor = next_addr
-    count = count + 1
-    if count > desc.max_len then
+    index = index + 1
+    if index > desc.max_len then
       tracer:error(error_codes.CIRCULAR_LIST_TOO_LONG)
       return cursor, list
     end
@@ -309,13 +313,21 @@ end
 -- Attempts to read as much as possible even after partial failures.
 -- Returns the decoded value and the result of tracer:success().
 --
--- @param desc descriptor table controlling how the value is read
+-- The tracer must implement:
+--   error(self, e)                     called on each error
+--   success(self) -> bool              called once at the end
+--   value(self, v)                     called after each primitive read
+--   begin_item(self, address, item)    called before each fields item
+--   end_item(self)                     called after each fields item
+--   begin_element(self, address, index) called before each collection element
+--   end_element(self)                  called after each collection element
+--   begin_desc(self, address, desc)    called before each descriptor read
+--   end_desc(self)                     called after each descriptor read
+--
+-- @param desc table descriptor controlling how the value is read
 -- @param address integer remote address to read from
--- @param reader reader table { fmt: string, read(self, address, size) -> string|nil }
--- @param tracer tracer table with mandatory methods:
---   error(self, e), success(self) -> bool, value(self, v),
---   begin_item(self, address, item), end_item(self),
---   begin_desc(self, address, desc), end_desc(self)
+-- @param reader table { fmt: string, read(self, address, size) -> string|nil }
+-- @param tracer table (see above)
 -- @return any, boolean decoded value and tracer:success()
 function M.read(desc, address, reader, tracer)
   local _, value = read_value(desc, address, reader, tracer)

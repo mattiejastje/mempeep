@@ -29,6 +29,8 @@ local function make_ok_tracer()
   function t:end_item() end
   function t:begin_desc(address, desc) end
   function t:end_desc() end
+  function t:begin_element(address, index) end
+  function t:end_element() end
   return t
 end
 
@@ -286,7 +288,6 @@ do
   assert(not ok)
   assert(v == nil)
 end
-
 
 -- ---------------------------------------------------------------------------
 -- Nested struct
