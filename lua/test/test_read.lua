@@ -294,19 +294,14 @@ end
 -- ---------------------------------------------------------------------------
 
 do
-  local Inner = d.Struct(
-    d.Field(Int32, "a"),
-    d.Field(Int32, "b")
+  local Inner = d.Struct(d.Field(Int32, "a"), d.Field(Int32, "b"))
+  local Outer = d.Struct(d.Field(Inner, "inner"), d.Field(Int32, "c"))
+  local reader = make_reader(
+    "I4",
+    "\x0B\x00\x00\x00" -- a = 11
+      .. "\x16\x00\x00\x00" -- b = 22
+      .. "\x21\x00\x00\x00" -- c = 33
   )
-  local Outer = d.Struct(
-    d.Field(Inner, "inner"),
-    d.Field(Int32, "c")
-  )
-  local reader = make_reader("I4", 
-      "\x0B\x00\x00\x00" -- a = 11
-        .. "\x16\x00\x00\x00" -- b = 22
-        .. "\x21\x00\x00\x00" -- c = 33
-    )
   local tracer = make_ok_tracer()
   local v, ok = read.read(Outer, 0, reader, tracer)
   assert(ok)
