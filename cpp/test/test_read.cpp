@@ -22,7 +22,7 @@ TEST_CASE("successful read") {
   auto reader = test::MockMemoryReader<uint8_t>{test::game_data};
   test::Game game{};
   OkTracer tracer{};
-  CHECK(read<test::TGame>(reader, base, game, tracer));
+  CHECK(read<test::TGame>(base, reader, tracer, game));
   test::check_game(game);
 }
 
@@ -30,7 +30,7 @@ TEST_CASE("failed read: complete failure") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   test::Game game{};
   OkTracer tracer{};
-  CHECK(!read<test::TGame>(reader, 0, game, tracer));
+  CHECK(!read<test::TGame>(0, reader, tracer, game));
 }
 
 TEST_CASE("failed read: invalid addresses") {
@@ -39,7 +39,7 @@ TEST_CASE("failed read: invalid addresses") {
   auto reader = test::MockMemoryReader<uint8_t>{data};
   test::Game game{};
   OkTracer tracer{};
-  CHECK(!read<test::TGame>(reader, base, game, tracer));
+  CHECK(!read<test::TGame>(base, reader, tracer, game));
   SUBCASE("level") { CHECK_EQ(game.level, 17); }
   SUBCASE("player") {
     CHECK_EQ(game.player.health, 123);
@@ -67,7 +67,7 @@ TEST_CASE("failed read: pad overflow") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Overflow overflow{};
   OkTracer tracer{};
-  CHECK(!read<TOverflow>(reader, 0, overflow, tracer));
+  CHECK(!read<TOverflow>(0, reader, tracer, overflow));
 }
 
 TEST_CASE("failed read: null ref") {
@@ -79,7 +79,7 @@ TEST_CASE("failed read: null ref") {
   auto reader = test::MockMemoryReader<uint8_t>{"\x00"};
   Obj obj{};
   OkTracer tracer{};
-  CHECK(!read<TObj>(reader, 0, obj, tracer));
+  CHECK(!read<TObj>(0, reader, tracer, obj));
 }
 
 TEST_CASE("failed read: missing ref") {
@@ -91,7 +91,7 @@ TEST_CASE("failed read: missing ref") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Obj obj{};
   OkTracer tracer{};
-  CHECK(!read<TObj>(reader, 0, obj, tracer));
+  CHECK(!read<TObj>(0, reader, tracer, obj));
 }
 
 TEST_CASE("failed read: missing nullable ref") {
@@ -103,5 +103,5 @@ TEST_CASE("failed read: missing nullable ref") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Obj obj{};
   OkTracer tracer{};
-  CHECK(!read<TObj>(reader, 0, obj, tracer));
+  CHECK(!read<TObj>(0, reader, tracer, obj));
 }

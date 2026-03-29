@@ -78,7 +78,7 @@ static void read_entity(const char (&data)[N]) {
   BufferReader reader{data};
   Entity e{};
   LogTracer tracer{std::cout};
-  const bool ok = mempeep::read<TEntity>(reader, uint8_t{0}, e, tracer);
+  const bool ok = mempeep::read<TEntity>(uint8_t{0}, reader, tracer, e);
   report(ok, e);
 }
 

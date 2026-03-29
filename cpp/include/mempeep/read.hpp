@@ -73,19 +73,19 @@ using Cursor = std::optional<address_t<MemoryReader>>;
 // Forward declaration for mutual recursion.
 template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value(
-  const MemoryReader& reader,
   address_t<MemoryReader> addr,
-  native_type_t<Desc>& out,
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Desc>& out
 );
 
 template <IsPrimitive T, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   Primitive<T>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<Primitive<T>>& target,  // T
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Primitive<T>>& target  // T
 ) {
   if (reader(address, sizeof(target), &target)) {
     if constexpr (requires { tracer.value(target); }) {
@@ -105,13 +105,13 @@ template <
   IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   LenString<LenT, MaxLen>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<LenString<LenT, MaxLen>>& target,  // std::string
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<LenString<LenT, MaxLen>>& target  // std::string
 ) {
   LenT len{};
-  auto cursor = read_value<Primitive<LenT>>(reader, address, len, tracer);
+  auto cursor = read_value<Primitive<LenT>>(address, reader, tracer, len);
   if (!cursor) return {};
   if (len > MaxLen) {
     tracer.error(Error::STRING_TOO_LONG);
@@ -133,11 +133,11 @@ template <
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_fields_item(
   Pad<N> item,
-  const MemoryReader&,
   address_t<MemoryReader>,
   address_t<MemoryReader> address,
-  auto&,
-  Tracer& tracer
+  const MemoryReader&,
+  Tracer& tracer,
+  auto&
 ) {
   [[maybe_unused]] auto scope = make_scope(tracer, address, item);
   return advance(address, N, tracer);
@@ -146,11 +146,11 @@ template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_fields_item(
   Seek<N> item,
-  const MemoryReader&,
   address_t<MemoryReader> base,
   address_t<MemoryReader> address,
-  auto&,
-  Tracer& tracer
+  const MemoryReader&,
+  Tracer& tracer,
+  auto&
 ) {
   [[maybe_unused]] auto scope = make_scope(tracer, address, item);
   return advance(base, N, tracer);
@@ -163,14 +163,14 @@ template <
   IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_fields_item(
   Field<Desc, M> item,
-  const MemoryReader& reader,
   address_t<MemoryReader>,
   address_t<MemoryReader> address,
-  detail::member_class_t<M>& target,  // ensure target.*M is valid
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  detail::member_class_t<M>& target  // ensure target.*M is valid
 ) {
   [[maybe_unused]] auto scope = make_scope(tracer, address, item);
-  return read_value<Desc>(reader, address, target.*M, tracer);
+  return read_value<Desc>(address, reader, tracer, target.*M);
 }
 
 // read_value_impl are the dispatch implementations for read_value
@@ -183,14 +183,14 @@ template <IsAddress AddrT, IsMemoryReader MemoryReader, IsTracer Tracer>
   )
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   RawAddr<AddrT>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<RawAddr<AddrT>>& target,  // AddrT
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<RawAddr<AddrT>>& target  // AddrT
 ) {
   address_t<MemoryReader> raw{};
   auto cursor = read_value<Primitive<address_t<MemoryReader>>>(
-    reader, address, raw, tracer
+    address, reader, tracer, raw
   );
   if (cursor) target = static_cast<AddrT>(raw);
   return cursor;
@@ -199,20 +199,20 @@ template <IsAddress AddrT, IsMemoryReader MemoryReader, IsTracer Tracer>
 template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   Ref<Desc>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<Ref<Desc>>& target,  // native_type_t<Desc>
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Ref<Desc>>& target  // native_type_t<Desc>
 ) {
   address_t<MemoryReader> target_ptr{};
   auto cursor = read_value<Primitive<address_t<MemoryReader>>>(
-    reader, address, target_ptr, tracer
+    address, reader, tracer, target_ptr
   );
   if (!cursor) return {};
   if (target_ptr) {
     // we always try to read as much as possible
     // so ignore output since cursor is still valid, only inner read failed
-    std::ignore = read_value<Desc>(reader, target_ptr, target, tracer);
+    std::ignore = read_value<Desc>(target_ptr, reader, tracer, target);
   } else {
     tracer.error(Error::ADDRESS_NULL);
   }
@@ -222,14 +222,14 @@ template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
 template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   NullableRef<Desc>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<NullableRef<Desc>>& target,  // std::optional
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<NullableRef<Desc>>& target  // std::optional
 ) {
   address_t<MemoryReader> target_ptr{};
   auto cursor = read_value<Primitive<address_t<MemoryReader>>>(
-    reader, address, target_ptr, tracer
+    address, reader, tracer, target_ptr
   );
   if (!cursor) return {};
   target.reset();
@@ -238,7 +238,7 @@ template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
     // we always try to read as much as possible
     // so ignore output since cursor is still valid, only inner read failed
     // keep field emplaced even if read fails to retain partially read data
-    std::ignore = read_value<Desc>(reader, target_ptr, target_value, tracer);
+    std::ignore = read_value<Desc>(target_ptr, reader, tracer, target_value);
   }
   // note: null target_ptr is ok, no error reported
   return cursor;
@@ -251,15 +251,15 @@ template <
   IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   Array<Desc, N>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<Array<Desc, N>>& target,  // std::array
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Array<Desc, N>>& target  // std::array
 ) {
   Cursor<MemoryReader> cursor{address};
   for (auto& elem : target) {
     if (!cursor) return {};  // quit when cursor becomes invalid
-    cursor = read_value<Desc>(reader, *cursor, elem, tracer);
+    cursor = read_value<Desc>(*cursor, reader, tracer, elem);
   }
   return cursor;
 }
@@ -271,19 +271,19 @@ template <
   IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   Vector<Desc, MaxLen>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<Vector<Desc, MaxLen>>& target,  // std::vector
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Vector<Desc, MaxLen>>& target  // std::vector
 ) {
   address_t<MemoryReader> begin_ptr{};
   auto cursor = read_value<Primitive<address_t<MemoryReader>>>(
-    reader, address, begin_ptr, tracer
+    address, reader, tracer, begin_ptr
   );
   if (!cursor) return {};
   address_t<MemoryReader> end_ptr{};
   cursor = read_value<Primitive<address_t<MemoryReader>>>(
-    reader, *cursor, end_ptr, tracer
+    *cursor, reader, tracer, end_ptr
   );
   if (!cursor) return {};
   if (begin_ptr == 0) {
@@ -299,7 +299,7 @@ template <
   Cursor<MemoryReader> vector_cursor{begin_ptr};
   while (vector_cursor && *vector_cursor < end_ptr) {
     auto& elem = target.emplace_back();
-    vector_cursor = read_value<Desc>(reader, *vector_cursor, elem, tracer);
+    vector_cursor = read_value<Desc>(*vector_cursor, reader, tracer, elem);
     if (++count > MaxLen) {
       tracer.error(Error::VECTOR_TOO_LONG);
       return cursor;
@@ -323,14 +323,14 @@ template <
   )
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   CircularList<Desc, Next, MaxLen>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<CircularList<Desc, Next, MaxLen>>& target,
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<CircularList<Desc, Next, MaxLen>>& target
 ) {
   address_t<MemoryReader> head_ptr{};
   auto cursor = read_value<Primitive<address_t<MemoryReader>>>(
-    reader, address, head_ptr, tracer
+    address, reader, tracer, head_ptr
   );
   if (!cursor) return {};
   if (head_ptr == 0) return cursor;  // empty list
@@ -339,7 +339,7 @@ template <
   target.clear();
   do {
     auto& elem = target.emplace_back();
-    if (!read_value<Desc>(reader, *list_cursor, elem, tracer)) return cursor;
+    if (!read_value<Desc>(*list_cursor, reader, tracer, elem)) return cursor;
     list_cursor = static_cast<address_t<MemoryReader>>(elem.*Next);
     if (!list_cursor) {
       tracer.error(Error::ADDRESS_NULL);
@@ -360,10 +360,10 @@ template <
   IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   Struct<T, Fields<Items...>>,
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<Struct<T, Fields<Items...>>>& target,  // T
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Struct<T, Fields<Items...>>>& target  // T
 ) {
   Cursor<MemoryReader> cursor{address};
   // Process each field item in order, stopping if the cursor becomes nullopt.
@@ -374,7 +374,7 @@ template <
   // Items{} constructs a tag value at zero cost to select the right overload.
   ((
      cursor
-     && (cursor = read_fields_item(Items{}, reader, address, *cursor, target, tracer))
+     && (cursor = read_fields_item(Items{}, address, *cursor, reader, tracer, target))
    ),
    ...);
   return cursor;
@@ -388,13 +388,13 @@ template <
  */
 template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_value(
-  const MemoryReader& reader,
   address_t<MemoryReader> addr,
-  native_type_t<Desc>& out,
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Desc>& out
 ) {
   [[maybe_unused]] auto scope = make_desc_scope(tracer, addr, Desc{});
-  return read_value_impl(Desc{}, reader, addr, out, tracer);
+  return read_value_impl(Desc{}, addr, reader, tracer, out);
 }
 
 }  // namespace mempeep::detail
@@ -419,12 +419,12 @@ namespace mempeep {
  */
 template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] auto read(
-  const MemoryReader& reader,
   address_t<MemoryReader> address,
-  native_type_t<Desc>& target,
-  Tracer& tracer
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Desc>& target
 ) {
-  std::ignore = detail::read_value<Desc>(reader, address, target, tracer);
+  std::ignore = detail::read_value<Desc>(address, reader, tracer, target);
   return tracer.success();
 };
 

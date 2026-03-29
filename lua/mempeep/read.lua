@@ -17,19 +17,19 @@ local addr_max = {
 
 --- Advance cursor by n bytes, reporting ADDRESS_OVERFLOW if the result would
 -- exceed the maximum value representable by the reader's address format.
--- @param cursor integer current address
+-- @param address integer current address
 -- @param n integer number of bytes to advance
 -- @param reader reader table { fmt, read }
 -- @param tracer tracer table
 -- @return integer|nil new cursor, or nil on overflow
-local function advance(cursor, n, reader, tracer)
+local function advance(address, n, reader, tracer)
   local max = addr_max[reader.fmt]
   assert(max, "unsupported address format: " .. tostring(reader.fmt))
-  if n > max - cursor then
+  if n > max - address then
     tracer:error(error_codes.ADDRESS_OVERFLOW)
     return nil
   end
-  return cursor + n
+  return address + n
 end
 
 --------------------------------------------------------------------------------
@@ -261,25 +261,25 @@ end
 
 --------------------------------------------------------------------------------
 -- read_fields_item dispatch table
--- Each entry is a function(item, base, cursor, reader, tracer) -> cursor, value
+-- Each entry is a function(item, base, address, reader, tracer) -> cursor, value
 -- Pad and Seek return nil as value. Field returns the decoded value.
 --------------------------------------------------------------------------------
 
 local read_fields_item_impl = {}
 
---- Pad: advance cursor by item.n bytes without reading.
-read_fields_item_impl.Pad = function(item, base, cursor, reader, tracer)
-  return advance(cursor, item.n, reader, tracer), nil
+--- Pad: advance address by item.n bytes without reading.
+read_fields_item_impl.Pad = function(item, base, address, reader, tracer)
+  return advance(address, item.n, reader, tracer), nil
 end
 
 --- Seek: seek to an absolute offset from the struct base address.
-read_fields_item_impl.Seek = function(item, base, cursor, reader, tracer)
+read_fields_item_impl.Seek = function(item, base, address, reader, tracer)
   return advance(base, item.n, reader, tracer), nil
 end
 
 --- Field: read and return the decoded value; the caller assigns it.
-read_fields_item_impl.Field = function(item, base, cursor, reader, tracer)
-  return read_value(item.desc, cursor, reader, tracer)
+read_fields_item_impl.Field = function(item, base, address, reader, tracer)
+  return read_value(item.desc, address, reader, tracer)
 end
 
 --------------------------------------------------------------------------------
@@ -291,15 +291,15 @@ end
 -- The caller (read_value_impl.Struct) is responsible for assigning the value.
 -- @param item fields item table (Field, Pad, or Seek)
 -- @param base integer base address of the enclosing struct
--- @param cursor integer current cursor address
+-- @param address integer current address
 -- @param reader reader table { fmt, read }
 -- @param tracer tracer table
 -- @return integer|nil, any cursor after the item and the decoded value (or nil)
-read_fields_item = function(item, base, cursor, reader, tracer)
-  tracer:begin_item(cursor, item)
+read_fields_item = function(item, base, address, reader, tracer)
+  tracer:begin_item(address, item)
   local impl = read_fields_item_impl[item.tag]
   assert(impl, "unknown fields item tag: " .. tostring(item.tag))
-  local next_cursor, value = impl(item, base, cursor, reader, tracer)
+  local next_cursor, value = impl(item, base, address, reader, tracer)
   tracer:end_item()
   return next_cursor, value
 end
