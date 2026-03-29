@@ -199,19 +199,16 @@ read_value_impl.CircularList = function(desc, address, reader, tracer)
   repeat
     local node
     list_cursor, node = read_value(desc.desc, list_cursor, reader, tracer)
-    -- Inner read failure stops traversal; outer cursor (past head word) is kept.
+    list[#list + 1] = node  -- save partial data even if read fails
     if not list_cursor then
       return cursor, list
     end
-    list[#list + 1] = node
-
     local next_addr = node[desc.next_key]
     if not next_addr or next_addr == 0 then
       tracer:error(error_codes.ADDRESS_NULL)
       return cursor, list
     end
     list_cursor = next_addr
-
     count = count + 1
     if count > desc.max_len then
       tracer:error(error_codes.CIRCULAR_LIST_TOO_LONG)
