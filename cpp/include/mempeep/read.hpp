@@ -118,7 +118,13 @@ template <
     return {};
   }
   out.resize(len);
-  if (len == 0) return cursor;  // reader might reject size 0
+  if (len == 0) {
+    // reader might reject size 0
+    if constexpr (requires { tracer.value(out); }) {
+      tracer.value(out);
+    }
+    return cursor;
+  }
   if (reader(*cursor, len, out.data())) {
     if constexpr (requires { tracer.value(out); }) {
       tracer.value(out);
