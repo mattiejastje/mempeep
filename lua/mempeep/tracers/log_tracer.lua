@@ -39,7 +39,7 @@ function M.new(out)
     _path_stack = {},
     _addr_stack = {},
   }
-  
+
   function t:error(e)
     self.ok = false
     local addr = self._addr_stack[#self._addr_stack] or 0
@@ -62,9 +62,11 @@ function M.new(out)
         repr = tostring(v)
       end
     elseif type(v) == "string" then
-      repr = '"' .. v:gsub('[%c\x80-\xff]', function(c)
-        return string.format("\\x%02x", c:byte())
-      end) .. '"'
+      repr = '"'
+        .. v:gsub("[%c\x80-\xff]", function(c)
+          return string.format("\\x%02x", c:byte())
+        end)
+        .. '"'
     else
       repr = tostring(v)
     end
@@ -75,7 +77,7 @@ function M.new(out)
     if item.tag == "Field" then
       self._path_stack[#self._path_stack + 1] = item.key
     else
-      self._path_stack[#self._path_stack + 1] = false  -- sentinel
+      self._path_stack[#self._path_stack + 1] = false -- sentinel
     end
   end
 

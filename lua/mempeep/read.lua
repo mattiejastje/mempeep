@@ -203,7 +203,7 @@ read_value_impl.CircularList = function(desc, address, reader, tracer)
     tracer:begin_element(list_cursor, index)
     list_cursor, node = read_value(desc.desc, list_cursor, reader, tracer)
     tracer:end_element()
-    list[#list + 1] = node  -- save partial data even if read fails
+    list[#list + 1] = node -- save partial data even if read fails
     if not list_cursor then
       return cursor, list
     end
