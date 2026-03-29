@@ -340,11 +340,12 @@ template <
   do {
     auto& elem = out.emplace_back();
     if (!read_value<Desc>(*list_cursor, reader, tracer, elem)) return cursor;
-    list_cursor = static_cast<address_t<MemoryReader>>(elem.*Next);
-    if (!list_cursor) {
+    const auto next_addr = static_cast<address_t<MemoryReader>>(elem.*Next);
+    if (next_addr == 0) {
       tracer.error(Error::ADDRESS_NULL);
       return cursor;
     }
+    list_cursor = next_addr;
     if (++count > MaxLen) {
       tracer.error(Error::CIRCULAR_LIST_TOO_LONG);
       return cursor;
