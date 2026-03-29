@@ -15,13 +15,13 @@ local addr_max = {
   ["I8"] = math.maxinteger,
 }
 
---- Advance cursor by n bytes, reporting ADDRESS_OVERFLOW if the result would
+--- Advance address by n bytes, reporting ADDRESS_OVERFLOW if the result would
 -- exceed the maximum value representable by the reader's address format.
 -- @param address integer current address
 -- @param n integer number of bytes to advance
 -- @param reader reader table { fmt, read }
 -- @param tracer tracer table
--- @return integer|nil new cursor, or nil on overflow
+-- @return integer|nil new cursor: address, or nil on overflow
 local function advance(address, n, reader, tracer)
   local max = addr_max[reader.fmt]
   assert(max, "unsupported address format: " .. tostring(reader.fmt))
