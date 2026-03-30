@@ -8,7 +8,8 @@ Int32 = d.Primitive("i4")
 local mock_out = function(lines)
   local out = {}
   function out:write(s)
-    assert(s == lines[1] .. "\n", "expected '" .. lines[1] .. "' but got '" .. tostring(s) .. "'")
+    assert(s:sub(-1) == "\n", "missing newline after '" .. s .. "'")
+    assert(s:sub(1, -2) == lines[1], "expected '" .. lines[1] .. "' but got '" .. s:sub(1, -2) .. "'")
     table.remove(lines, 1)
   end
   return out
