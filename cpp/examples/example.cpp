@@ -2,10 +2,9 @@
 #include <cstdint>
 #include <iostream>
 #include <mempeep/read.hpp>
+#include <mempeep/test/memory.hpp>  // for mock memory reader
 #include <mempeep/tracers/log_tracer.hpp>
 #include <optional>
-
-#include "support/buffer_reader.hpp"
 
 using namespace mempeep;
 
@@ -75,7 +74,8 @@ static void report(bool ok, const Entity& e) {
 
 template <std::size_t N>
 static void read_entity(const char (&data)[N]) {
-  BufferReader reader{data};
+  // In real applications, you would supply the reader.
+  test::MockMemoryReader<uint8_t> reader{data};
   Entity e{};
   LogTracer tracer{std::cout};
   const bool ok = mempeep::read<TEntity>(uint8_t{0}, reader, tracer, e);

@@ -7,9 +7,6 @@
 using namespace mempeep;
 
 static_assert(IsTracer<OkTracer>);
-static_assert(!IsScopedTracer<OkTracer>);
-static_assert(!IsDescScopedTracer<OkTracer>);
-static_assert(!IsValueTracer<OkTracer>);
 
 TEST_CASE("init") {
   OkTracer tracer{};

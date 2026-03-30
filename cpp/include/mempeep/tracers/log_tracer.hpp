@@ -6,119 +6,86 @@
 #include <ostream>
 #include <print>
 
-template <mempeep::IsDescriptor Desc, auto M>
-  requires std::is_member_object_pointer_v<decltype(M)>
-std::string item_label(mempeep::Field<Desc, M>) {
-  return std::format("{}:", nameof::nameof_member<M>());
+namespace mempeep::detail {
+
+std::string build_path(const std::vector<std::string>& path_stack) {
+  std::string result;
+  for (const auto& part : path_stack) result += part;
+  return result;
 }
 
-template <std::size_t N>
-std::string item_label(mempeep::Pad<N>) {
-  return std::format("(pad<{:#x}>)", N);
-}
+}  // namespace mempeep::detail
 
-template <std::size_t N>
-std::string item_label(mempeep::Seek<N>) {
-  return std::format("(seek<{:#x}>)", N);
-}
+namespace mempeep {
 
-template <typename T>
-std::string desc_label(mempeep::Primitive<T>) {
-  return std::string(nameof::nameof_type<T>());
-}
-
-template <typename T>
-std::string desc_label(mempeep::RawAddr<T>) {
-  return "(raw-addr)";
-}
-
-template <typename T>
-std::string desc_label(mempeep::Ref<T>) {
-  return "(ref)";
-}
-
-template <typename T>
-std::string desc_label(mempeep::NullableRef<T>) {
-  return "(nullable-ref)";
-}
-
-template <typename T, std::size_t N>
-std::string desc_label(mempeep::Array<T, N>) {
-  return std::format("(array)[{}]", N);
-}
-
-template <typename T, auto MaxLen>
-std::string desc_label(mempeep::Vector<T, MaxLen>) {
-  return std::format("(vector)");
-}
-
-template <typename T, auto N, auto MaxLen>
-std::string desc_label(mempeep::CircularList<T, N, MaxLen>) {
-  return std::format("(circular-list)");
-}
-
-template <typename T, typename TFields>
-std::string desc_label(mempeep::Struct<T, TFields>) {
-  return std::string(nameof::nameof_type<T>());
-}
-
-/** @brief Simple scoped tracer.
+/** @brief Simple log tracer.
  *
- * Logs read operations throughout the layout.
- * Logs errors too.
- * Tracks if an error happened at any point.
+ * Logs every primitive read and every error encountered during a read.
+ * Output format: [address] path = value
+ * Tracks whether any error occurred.
  */
 struct LogTracer {
   std::ostream& out;
   bool ok = true;
-  int indent = 0;
-  uint64_t address = 0;
-
-  void log(std::string_view msg) {
-    std::print(out, "[{:08x}] {: >{}}{}\n", address, "", indent, msg);
-  }
+  std::vector<std::string> path_stack;
+  std::vector<std::uint64_t> addr_stack;
 
   void error(mempeep::Error e) {
     ok = false;
-    log(std::format("[ERROR {}]", static_cast<int>(e)));
-  }
-
-  template <typename T>
-  void value(const T& val) {
-    if constexpr (std::is_integral_v<T>) {
-      log(std::format("={:#x}", val));  // format as hex
-    } else if constexpr (std::formattable<T, char>) {
-      log(std::format("={}", val));
-    } else {
-      log("=...");
-    }
+    std::print(
+      out,
+      "[{:08x}] {} = {}\n",
+      addr_stack.empty() ? 0 : addr_stack.back(),
+      detail::build_path(path_stack),
+      error_name(e)
+    );
   }
 
   bool success() const { return ok; }
 
-  struct Scope {
-    LogTracer& t;
-
-    template <typename Item>
-    Scope(LogTracer& t, uint64_t address, Item item) : t(t) {
-      t.address = address;
-      t.log(item_label(item));
-      t.indent++;
+  template <typename T>
+  void value(const T& val) {
+    std::string repr;
+    if constexpr (std::is_integral_v<T>) {
+      repr = std::format("{:#x}", val);
+    } else if constexpr (std::formattable<T, char>) {
+      repr = std::format("{}", val);
+    } else {
+      repr = "...";
     }
+    std::print(
+      out,
+      "[{:08x}] {} = {}\n",
+      addr_stack.empty() ? 0 : addr_stack.back(),
+      detail::build_path(path_stack),
+      repr
+    );
+  }
 
-    ~Scope() { t.indent--; }
-  };
+  template <typename Item>
+  void begin_fields_item(std::uint64_t, Item) {
+    path_stack.push_back("");
+  }
 
-  struct DescScope {
-    LogTracer& t;
+  template <mempeep::IsDescriptor Desc, auto M>
+  void begin_fields_item(std::uint64_t, mempeep::Field<Desc, M>) {
+    path_stack.push_back("." + std::string(nameof::nameof_member<M>()));
+  }
 
-    template <typename Desc>
-    DescScope(LogTracer& t, uint64_t address, Desc desc) : t(t) {
-      t.address = address;
-      t.log(desc_label(desc));
-      t.indent++;
-    }
+  void end_fields_item() { path_stack.pop_back(); }
 
-    ~DescScope() { t.indent--; }
-  };
+  void begin_element(std::uint64_t, std::size_t index) {
+    path_stack.push_back("[" + std::to_string(index) + "]");
+  }
+
+  void end_element() { path_stack.pop_back(); }
+
+  template <typename Desc>
+  void begin_desc(std::uint64_t address, Desc) {
+    addr_stack.push_back(address);
+  }
+
+  void end_desc() { addr_stack.pop_back(); }
 };
+
+}  // namespace mempeep

@@ -2,10 +2,10 @@
 
 #include <doctest/doctest.h>
 
+#include <mempeep/test/memory.hpp>
 #include <string_view>
 
 #include "mock_game.hpp"
-#include "mock_memory.hpp"
 
 namespace mempeep::test {
 

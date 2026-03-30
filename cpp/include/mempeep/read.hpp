@@ -11,32 +11,6 @@
 
 namespace mempeep::detail {
 
-struct NoScope {};
-
-// Deduces Tracer::Scope from Tracer, avoiding repetition at call sites.
-// make_scope is called for fields items (Field, Pad, Seek).
-template <IsTracer Tracer, IsAddress Address, IsFieldsItem Item>
-auto make_scope(Tracer& tracer, Address address, Item item) {
-  if constexpr (IsScopedTracer<Tracer>) {
-    const auto addr = static_cast<std::uint64_t>(address);
-    return typename Tracer::Scope(tracer, addr, item);
-  } else {
-    return NoScope{};
-  }
-}
-
-// Deduces Tracer::DescScope from Tracer, avoiding repetition at call sites.
-// make_desc_scope is called for descriptors (Primitive, Struct, Array, ...).
-template <IsTracer Tracer, IsAddress Address, IsDescriptor Desc>
-auto make_desc_scope(Tracer& tracer, Address address, Desc desc) {
-  if constexpr (IsDescScopedTracer<Tracer>) {
-    const auto addr = static_cast<std::uint64_t>(address);
-    return typename Tracer::DescScope(tracer, addr, desc);
-  } else {
-    return NoScope{};
-  }
-}
-
 // Abstract unsigned addition with overflow check.
 template <std::unsigned_integral S, std::unsigned_integral T>
 [[nodiscard]] constexpr std::optional<S> checked_add(S s, T t) noexcept {
@@ -88,9 +62,7 @@ template <IsPrimitive T, IsMemoryReader MemoryReader, IsTracer Tracer>
   native_type_t<Primitive<T>>& out  // T
 ) {
   if (reader(address, sizeof(out), &out)) {
-    if constexpr (requires { tracer.value(out); }) {
-      tracer.value(out);
-    }
+    tracer.value(out);
     return advance(address, sizeof(out), tracer);
   } else {
     tracer.error(Error::READ_FAILED);
@@ -119,16 +91,11 @@ template <
   }
   out.resize(len);
   if (len == 0) {
-    // reader might reject size 0
-    if constexpr (requires { tracer.value(out); }) {
-      tracer.value(out);
-    }
+    tracer.value(out);
     return cursor;
   }
-  if (reader(*cursor, len, out.data())) {
-    if constexpr (requires { tracer.value(out); }) {
-      tracer.value(out);
-    }
+  else if (reader(*cursor, len, out.data())) {
+    tracer.value(out);
     return advance(*cursor, len, tracer);
   } else {
     tracer.error(Error::READ_FAILED);
@@ -137,7 +104,7 @@ template <
 }
 
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
-[[nodiscard]] Cursor<MemoryReader> read_fields_item(
+[[nodiscard]] Cursor<MemoryReader> read_fields_item_impl(
   Pad<N> item,
   address_t<MemoryReader>,
   address_t<MemoryReader> address,
@@ -145,12 +112,11 @@ template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
   Tracer& tracer,
   auto&
 ) {
-  [[maybe_unused]] auto scope = make_scope(tracer, address, item);
   return advance(address, N, tracer);
 }
 
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
-[[nodiscard]] Cursor<MemoryReader> read_fields_item(
+[[nodiscard]] Cursor<MemoryReader> read_fields_item_impl(
   Seek<N> item,
   address_t<MemoryReader> base,
   address_t<MemoryReader> address,
@@ -158,7 +124,6 @@ template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
   Tracer& tracer,
   auto&
 ) {
-  [[maybe_unused]] auto scope = make_scope(tracer, address, item);
   return advance(base, N, tracer);
 }
 
@@ -167,7 +132,7 @@ template <
   auto M,
   IsMemoryReader MemoryReader,
   IsTracer Tracer>
-[[nodiscard]] Cursor<MemoryReader> read_fields_item(
+[[nodiscard]] Cursor<MemoryReader> read_fields_item_impl(
   Field<Desc, M> item,
   address_t<MemoryReader>,
   address_t<MemoryReader> address,
@@ -175,8 +140,25 @@ template <
   Tracer& tracer,
   detail::member_class_t<M>& out  // ensure out.*M is valid
 ) {
-  [[maybe_unused]] auto scope = make_scope(tracer, address, item);
   return read_value<Desc>(address, reader, tracer, out.*M);
+}
+
+template <
+  IsFieldsItem FieldsItem,
+  IsMemoryReader MemoryReader,
+  IsTracer Tracer>
+[[nodiscard]] Cursor<MemoryReader> read_fields_item(
+  FieldsItem item,
+  address_t<MemoryReader> base,
+  address_t<MemoryReader> address,
+  const MemoryReader& reader,
+  Tracer& tracer,
+  auto& out
+) {
+  tracer.begin_fields_item(address, item);
+  auto cursor = read_fields_item_impl(item, base, address, reader, tracer, out);
+  tracer.end_fields_item();
+  return cursor;
 }
 
 // read_value_impl are the dispatch implementations for read_value
@@ -263,9 +245,11 @@ template <
   native_type_t<Array<Desc, N>>& out  // std::array
 ) {
   Cursor<MemoryReader> cursor{address};
-  for (auto& elem : out) {
-    if (!cursor) return {};  // quit when cursor becomes invalid
-    cursor = read_value<Desc>(*cursor, reader, tracer, elem);
+  for (std::size_t i = 0; i < N; ++i) {
+    if (!cursor) return {};
+    tracer.begin_element(static_cast<std::uint64_t>(*cursor), i);
+    cursor = read_value<Desc>(*cursor, reader, tracer, out[i]);
+    tracer.end_element();
   }
   return cursor;
 }
@@ -305,7 +289,9 @@ template <
   Cursor<MemoryReader> vector_cursor{begin_ptr};
   while (vector_cursor && *vector_cursor < end_ptr) {
     auto& elem = out.emplace_back();
+    tracer.begin_element(*vector_cursor, count);
     vector_cursor = read_value<Desc>(*vector_cursor, reader, tracer, elem);
+    tracer.end_element();
     if (++count > MaxLen) {
       tracer.error(Error::VECTOR_TOO_LONG);
       return cursor;
@@ -345,7 +331,10 @@ template <
   out.clear();
   do {
     auto& elem = out.emplace_back();
-    if (!read_value<Desc>(*list_cursor, reader, tracer, elem)) return cursor;
+    tracer.begin_element(*list_cursor, count);
+    auto cursor = read_value<Desc>(*list_cursor, reader, tracer, elem);
+    tracer.end_element();
+    if (!cursor) return cursor;
     const auto next_addr = static_cast<address_t<MemoryReader>>(elem.*Next);
     if (next_addr == 0) {
       tracer.error(Error::ADDRESS_NULL);
@@ -400,8 +389,10 @@ template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
   Tracer& tracer,
   native_type_t<Desc>& out
 ) {
-  [[maybe_unused]] auto scope = make_desc_scope(tracer, addr, Desc{});
-  return read_value_impl(Desc{}, addr, reader, tracer, out);
+  tracer.begin_desc(addr, Desc{});
+  auto cursor = read_value_impl(Desc{}, addr, reader, tracer, out);
+  tracer.end_desc();
+  return cursor;
 }
 
 }  // namespace mempeep::detail
