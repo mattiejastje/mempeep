@@ -5,6 +5,7 @@
 #include <mempeep/read.hpp>
 #include <mempeep/test/memory.hpp>
 #include <mempeep/tracers/ok_tracer.hpp>
+#include <mempeep/tracers/log_tracer.hpp>
 #include <optional>
 #include <string_view>
 
@@ -22,7 +23,7 @@ TEST_CASE("successful read") {
   static constexpr uint8_t base{4};
   auto reader = test::MockMemoryReader<uint8_t>{test::game_data};
   test::Game game{};
-  OkTracer tracer{};
+  auto tracer = make_stream_log_tracer(std::cout, LogLevel::Values);
   CHECK(read<test::TGame>(base, reader, tracer, game));
   SUBCASE("level") { CHECK_EQ(game.level, 17); }
   SUBCASE("message") {
