@@ -14,7 +14,7 @@ do
       .. "\x16\x00\x00\x00" -- b = 22
       .. "\x21\x00\x00\x00" -- c = 33
   )
-  local tracer = log_tracer.new()
+  local tracer = log_tracer.make_stream_log_tracer(io.stdout, log_tracer.log_level.VALUES)
   local v, ok = read.read(Outer, 0, reader, tracer)
   assert(ok)
   assert(v)

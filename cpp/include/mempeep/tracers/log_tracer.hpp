@@ -11,8 +11,8 @@
 namespace mempeep {
 
 enum class LogLevel {
-  Errors,
-  Values,
+  ERRORS = 0,
+  VALUES = 1,
 };
 
 /**
@@ -24,7 +24,7 @@ enum class LogLevel {
  */
 struct LogEntry {
   /** @brief Kind of log entry. */
-  enum class Kind { Value, Error };
+  enum class Kind { ERR, VAL };
 
   /** @brief Remote address at which the read was attempted. */
   std::uint64_t address;
@@ -50,7 +50,7 @@ using LogCallback = std::function<void(const LogEntry&)>;
  */
 struct LogTracer {
   LogCallback on_entry;
-  LogLevel level = LogLevel::Errors;
+  LogLevel level = LogLevel::ERRORS;
   bool ok = true;
   std::deque<std::string> path_stack;
   std::deque<std::uint64_t> addr_stack;
@@ -62,7 +62,7 @@ struct LogTracer {
         .address = addr_stack.empty() ? 0u : addr_stack.back(),
         .path = std::ranges::to<std::string>(std::views::join(path_stack)),
         .text = std::string(error_name(e)),
-        .kind = LogEntry::Kind::Error,
+        .kind = LogEntry::Kind::ERR,
       }
     );
   }
@@ -71,7 +71,7 @@ struct LogTracer {
 
   template <typename T>
   void value(const T& val) {
-    if (level >= LogLevel::Values) {
+    if (level >= LogLevel::VALUES) {
       std::string repr;
       if constexpr (std::is_integral_v<T>) {
         repr = std::format("{:#x}", val);
@@ -85,7 +85,7 @@ struct LogTracer {
           .address = addr_stack.empty() ? 0u : addr_stack.back(),
           .path = std::ranges::to<std::string>(std::views::join(path_stack)),
           .text = std::move(repr),
-          .kind = LogEntry::Kind::Value,
+          .kind = LogEntry::Kind::VAL,
         }
       );
     }
@@ -118,13 +118,13 @@ struct LogTracer {
 };
 
 [[nodiscard]] LogTracer make_stream_log_tracer(
-  std::ostream& out, LogLevel level = LogLevel::Errors
+  std::ostream& out, LogLevel level = LogLevel::ERRORS
 ) {
   return LogTracer{
     .on_entry =
       [&out](const LogEntry& entry) {
         const auto addr_str = std::format("[{:08x}]", entry.address);
-        if (entry.kind == LogEntry::Kind::Error) {
+        if (entry.kind == LogEntry::Kind::ERR) {
           std::print(out, "{} {} <{}>\n", addr_str, entry.path, entry.text);
         } else {
           std::print(out, "{} {} = {}\n", addr_str, entry.path, entry.text);
