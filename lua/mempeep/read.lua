@@ -297,11 +297,11 @@ end
 -- @param tracer tracer table
 -- @return integer|nil, any cursor after the item and the decoded value (or nil)
 read_fields_item = function(item, base, address, reader, tracer)
-  tracer:begin_item(address, item)
+  tracer:begin_fields_item(address, item)
   local impl = read_fields_item_impl[item.tag]
   assert(impl, "unknown fields item tag: " .. tostring(item.tag))
   local next_cursor, value = impl(item, base, address, reader, tracer)
-  tracer:end_item()
+  tracer:end_fields_item()
   return next_cursor, value
 end
 
@@ -317,8 +317,8 @@ end
 --   error(self, e)                     called on each error
 --   success(self) -> bool              called once at the end
 --   value(self, v)                     called after each primitive read
---   begin_item(self, address, item)    called before each fields item
---   end_item(self)                     called after each fields item
+--   begin_fields_item(self, address, item)    called before each fields item
+--   end_fields_item(self)                     called after each fields item
 --   begin_element(self, address, index) called before each collection element
 --   end_element(self)                  called after each collection element
 --   begin_desc(self, address, desc)    called before each descriptor read

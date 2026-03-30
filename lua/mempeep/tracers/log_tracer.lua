@@ -64,7 +64,7 @@ function M.new(out)
     out:write(string.format("[%s] %s = %s\n", fmt_addr(addr), path, repr))
   end
 
-  function t:begin_item(address, item)
+  function t:begin_fields_item(address, item)
     if item.tag == "Field" then
       self._path_stack[#self._path_stack + 1] = item.key
     else
@@ -72,7 +72,7 @@ function M.new(out)
     end
   end
 
-  function t:end_item()
+  function t:end_fields_item()
     self._path_stack[#self._path_stack] = nil
   end
 
