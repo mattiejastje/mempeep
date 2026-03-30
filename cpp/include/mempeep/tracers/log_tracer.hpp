@@ -4,9 +4,11 @@
 #include <format>      // std::format
 #include <functional>  // std::function
 #include <mempeep/descriptors.hpp>
+#include <mempeep/errors.hpp>
 #include <nameof.hpp>
-#include <print>   // std::print
-#include <ranges>  // std::ranges
+#include <ostream>  // std::ostream
+#include <print>    // std::print
+#include <ranges>   // std::ranges
 
 namespace mempeep {
 
