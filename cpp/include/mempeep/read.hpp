@@ -3,8 +3,8 @@
 #include <concepts>  // std::unsigned_integral
 #include <cstdint>   // std::uint64_t
 #include <limits>    // std::numeric_limits
-#include <mempeep/concepts/memory.hpp>
-#include <mempeep/concepts/tracer.hpp>
+#include <mempeep/detail/concepts/memory.hpp>
+#include <mempeep/detail/concepts/tracer.hpp>
 #include <mempeep/descriptors.hpp>
 #include <optional>  // std::optional
 #include <utility>   // std::ignore

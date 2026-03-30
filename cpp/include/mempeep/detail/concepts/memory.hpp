@@ -1,8 +1,8 @@
 #pragma once
 
-#include <concepts>             // std::same_as
-#include <cstddef>              // std::size_t
-#include <mempeep/concepts/address.hpp>  // IsAddress
+#include <concepts>                             // std::same_as
+#include <cstddef>                              // std::size_t
+#include <mempeep/detail/concepts/address.hpp>  // IsAddress
 
 namespace mempeep {
 

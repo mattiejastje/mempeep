@@ -1,7 +1,7 @@
 // not a doctest since we only need static_asserts
 #include <cstddef>  // std::size_t
 #include <cstdint>  // std::int32_t, ...
-#include <mempeep/concepts/address.hpp>
+#include <mempeep/detail/concepts/address.hpp>
 
 static_assert(!mempeep::IsAddress<void>);
 static_assert(!mempeep::IsAddress<void*>);

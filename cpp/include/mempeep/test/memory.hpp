@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstring>  // std::memcpy
-#include <mempeep/concepts/address.hpp>
+#include <mempeep/detail/concepts/address.hpp>
 #include <string>  // std::data, std::size
 
 namespace mempeep::test {

@@ -2,8 +2,8 @@
 
 #include <concepts>  // std::same_as
 #include <cstddef>   // std::size_t
-#include <mempeep/concepts/descriptor.hpp>
-#include <mempeep/concepts/fields_item.hpp>
+#include <mempeep/detail/concepts/descriptor.hpp>
+#include <mempeep/detail/concepts/fields_item.hpp>
 #include <mempeep/detail/member_traits.hpp>
 
 // In this file we set up everything for the Struct descriptor.

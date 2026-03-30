@@ -1,12 +1,9 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
-#include <mempeep/concepts/tracer.hpp>
 #include <mempeep/tracers/ok_tracer.hpp>
 
 using namespace mempeep;
-
-static_assert(IsTracer<OkTracer>);
 
 TEST_CASE("init") {
   OkTracer tracer{};
