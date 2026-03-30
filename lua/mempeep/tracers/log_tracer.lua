@@ -108,9 +108,9 @@ function M.make_stream_log_tracer(out, level)
   local on_entry = function(entry)
     addr_str = fmt_addr(entry.address)
     if entry.kind == M.log_entry_kind.ERR then
-      out:write(string.format("%s %s <%s>\n", addr_str, path, entry.text))
+      out:write(string.format("%s %s <%s>\n", addr_str, entry.path, entry.text))
     else
-      out:write(string.format("%s %s = %s\n", addr_str, path, entry.text))
+      out:write(string.format("%s %s = %s\n", addr_str, entry.path, entry.text))
     end
   end
 
