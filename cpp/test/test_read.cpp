@@ -3,11 +3,12 @@
 
 #include <array>
 #include <mempeep/read.hpp>
+#include <mempeep/test/memory.hpp>
 #include <mempeep/tracers/ok_tracer.hpp>
 #include <optional>
 #include <string_view>
 
-#include "support/mock_game_data.hpp"
+#include "support/mock_game.hpp"
 
 using namespace mempeep;
 
@@ -23,7 +24,50 @@ TEST_CASE("successful read") {
   test::Game game{};
   OkTracer tracer{};
   CHECK(read<test::TGame>(base, reader, tracer, game));
-  test::check_game(game);
+  SUBCASE("level") { CHECK_EQ(game.level, 17); }
+  SUBCASE("message") {
+    CHECK_EQ(game.message.size(), 11);
+    CHECK_EQ(game.message, std::string("hello world"));
+  }
+  SUBCASE("player") {
+    CHECK_EQ(game.player.health, 123);
+    CHECK_EQ(game.player.pos.x, 11);
+    CHECK_EQ(game.player.pos.y, 22);
+    CHECK_EQ(game.player.target_ptr, 0);
+    CHECK_EQ(game.player.shop_ptr, 2);
+    CHECK_EQ(game.player.weapon_ptr, 6);
+    CHECK_EQ(game.player.prev_pos.x, 88);
+    CHECK_EQ(game.player.prev_pos.y, 99);
+    CHECK_EQ(game.player.mana, 47);
+    SUBCASE("tagged_pos") {
+      REQUIRE(game.player.tagged_pos.has_value());
+      CHECK_EQ(game.player.tagged_pos->x, 55);
+      CHECK_EQ(game.player.tagged_pos->y, 66);
+    }
+    CHECK(!game.player.house_pos.has_value());
+  }
+  SUBCASE("hands") {
+    CHECK_EQ(game.hands[0].x, 1);
+    CHECK_EQ(game.hands[0].y, 2);
+    CHECK_EQ(game.hands[1].x, 3);
+    CHECK_EQ(game.hands[1].y, 4);
+  }
+  SUBCASE("pets") {
+    REQUIRE_EQ(game.pets.size(), 3);
+    CHECK_EQ(game.pets[0].x, 5);
+    CHECK_EQ(game.pets[0].y, 6);
+    CHECK_EQ(game.pets[1].x, 7);
+    CHECK_EQ(game.pets[1].y, 8);
+    CHECK_EQ(game.pets[2].x, 9);
+    CHECK_EQ(game.pets[2].y, 10);
+  }
+  SUBCASE("caves") {
+    REQUIRE_EQ(game.caves.size(), 4);
+    CHECK_EQ(game.caves[0].id, 16);
+    CHECK_EQ(game.caves[1].id, 18);
+    CHECK_EQ(game.caves[2].id, 20);
+    CHECK_EQ(game.caves[3].id, 22);
+  }
 }
 
 TEST_CASE("failed read: complete failure") {
