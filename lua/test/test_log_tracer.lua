@@ -1,4 +1,4 @@
-d = require("mempeep.descriptor")
+d = require("mempeep.descriptors")
 log_tracer = require("mempeep.tracers.log_tracer")
 memory = require("mempeep.test.memory")
 read = require("mempeep.read")

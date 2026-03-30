@@ -1,7 +1,8 @@
-local mempeep = {}
-
-mempeep.descriptor = require("mempeep.descriptor")
-mempeep.errors = require("mempeep.errors")
-mempeep.read = require("mempeep.read")
-
-return mempeep
+return {
+  descriptors = require("mempeep.descriptors"),
+  errors = require("mempeep.errors"),
+  read = require("mempeep.read"),
+  tracers = {
+    log_tracer = require("mempeep.tracers.log_tracer"),
+  },
+}

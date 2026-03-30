@@ -1,4 +1,4 @@
-local d = require("mempeep.descriptor")
+local d = require("mempeep.descriptors")
 local read = require("mempeep.read")
 local memory = require("mempeep.test.memory")
 

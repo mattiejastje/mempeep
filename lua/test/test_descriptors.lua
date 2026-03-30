@@ -1,4 +1,4 @@
-local d = require("mempeep.descriptor")
+local d = require("mempeep.descriptors")
 
 do
   d.assert_string("hello world")
