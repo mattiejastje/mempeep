@@ -1,6 +1,6 @@
 --- Reading values from remote memory using descriptors.
 
-local error_codes = require("mempeep.error")
+local errors = require("mempeep.errors")
 
 local M = {}
 
@@ -26,7 +26,7 @@ local function advance(address, n, reader, tracer)
   local max = addr_max[reader.fmt]
   assert(max, "unsupported address format: " .. tostring(reader.fmt))
   if n > max - address then
-    tracer:error(error_codes.ADDRESS_OVERFLOW)
+    tracer:error(errors.ADDRESS_OVERFLOW)
     return nil
   end
   return address + n
@@ -44,7 +44,7 @@ read_value_impl.Primitive = function(desc, address, reader, tracer)
   local size = desc.fmt:packsize()
   local bytes = reader:read(address, size)
   if not bytes then
-    tracer:error(error_codes.READ_FAILED)
+    tracer:error(errors.READ_FAILED)
     return nil, nil
   end
   local value = desc.fmt:unpack(bytes)
@@ -66,7 +66,7 @@ read_value_impl.LenString = function(desc, address, reader, tracer)
   end
 
   if len > desc.max_len then
-    tracer:error(error_codes.STRING_TOO_LONG)
+    tracer:error(errors.STRING_TOO_LONG)
     return nil, nil
   end
 
@@ -77,7 +77,7 @@ read_value_impl.LenString = function(desc, address, reader, tracer)
 
   local str_bytes = reader:read(cursor, len)
   if not str_bytes then
-    tracer:error(error_codes.READ_FAILED)
+    tracer:error(errors.READ_FAILED)
     return nil, nil
   end
   tracer:value(str_bytes)
@@ -93,7 +93,7 @@ read_value_impl.Ref = function(desc, address, reader, tracer)
   end
 
   if ptr == 0 then
-    tracer:error(error_codes.ADDRESS_NULL)
+    tracer:error(errors.ADDRESS_NULL)
     -- cursor is still valid; we just could not follow the pointer
     return cursor, nil
   end
@@ -154,12 +154,12 @@ read_value_impl.Vector = function(desc, address, reader, tracer)
   end
 
   if begin_ptr == 0 then
-    tracer:error(error_codes.ADDRESS_NULL)
+    tracer:error(errors.ADDRESS_NULL)
     return cursor, nil
   end
 
   if begin_ptr > end_ptr then
-    tracer:error(error_codes.VECTOR_INVALID_RANGE)
+    tracer:error(errors.VECTOR_INVALID_RANGE)
     return cursor, nil
   end
 
@@ -174,12 +174,12 @@ read_value_impl.Vector = function(desc, address, reader, tracer)
     vec[#vec + 1] = value
     index = index + 1
     if index > desc.max_len then
-      tracer:error(error_codes.VECTOR_TOO_LONG)
+      tracer:error(errors.VECTOR_TOO_LONG)
       return cursor, vec
     end
   end
   if vec_cursor and vec_cursor ~= end_ptr then
-    tracer:error(error_codes.VECTOR_MISALIGNED)
+    tracer:error(errors.VECTOR_MISALIGNED)
   end
   return cursor, vec
 end
@@ -209,13 +209,13 @@ read_value_impl.CircularList = function(desc, address, reader, tracer)
     end
     local next_addr = node[desc.next_key]
     if not next_addr or next_addr == 0 then
-      tracer:error(error_codes.ADDRESS_NULL)
+      tracer:error(errors.ADDRESS_NULL)
       return cursor, list
     end
     list_cursor = next_addr
     index = index + 1
     if index > desc.max_len then
-      tracer:error(error_codes.CIRCULAR_LIST_TOO_LONG)
+      tracer:error(errors.CIRCULAR_LIST_TOO_LONG)
       return cursor, list
     end
   until list_cursor == head_ptr
