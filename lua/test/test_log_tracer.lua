@@ -5,6 +5,15 @@ read = require("mempeep.read")
 
 Int32 = d.Primitive("i4")
 
+local mock_out = function(lines)
+  local out = {}
+  function out:write(s)
+    assert(s == lines[1] .. "\n", "expected '" .. lines[1] .. "' but got '" .. tostring(s) .. "'")
+    table.remove(lines, 1)
+  end
+  return out
+end
+
 do
   local Inner = d.Struct(d.Field(Int32, "a"), d.Field(Int32, "b"))
   local Outer = d.Struct(d.Field(Inner, "inner"), d.Field(Int32, "c"))
@@ -14,7 +23,8 @@ do
       .. "\x16\x00\x00\x00" -- b = 22
       .. "\x21\x00\x00\x00" -- c = 33
   )
-  local tracer = log_tracer.make_stream_log_tracer(io.stdout, log_tracer.log_level.VALUES)
+  out = mock_out({ "[00000000] .inner.a = 0xb", "[00000004] .inner.b = 0x16", "[00000008] .c = 0x21" })
+  local tracer = log_tracer.make_stream_log_tracer(out, log_tracer.log_level.VALUES)
   local v, ok = read.read(Outer, 0, reader, tracer)
   assert(ok)
   assert(v)

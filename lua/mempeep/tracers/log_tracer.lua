@@ -49,7 +49,11 @@ function M.new(on_entry, level)
       local repr
       if type(v) == "number" then
         if math.type(v) == "integer" then
-          repr = string.format("%d (0x%x)", v, v)
+          if v >= 0 then
+            repr = string.format("0x%x", v)
+          else
+            repr = string.format("-0x%x", -v)
+          end
         else
           repr = tostring(v)
         end
