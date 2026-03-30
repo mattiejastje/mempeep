@@ -2,7 +2,7 @@
 
 #include <cstddef>  // std::size_t
 #include <cstdint>  // std::uint64_t
-#include <mempeep/error.hpp>
+#include <mempeep/errors.hpp>
 
 namespace mempeep {
 
