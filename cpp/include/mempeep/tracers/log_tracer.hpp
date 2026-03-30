@@ -1,22 +1,18 @@
 #pragma once
 
+#include <deque>  // std::deque (used as iterable stack)
 #include <format>
 #include <mempeep/descriptor.hpp>
 #include <nameof.hpp>
 #include <ostream>
 #include <print>
 
-namespace mempeep::detail {
-
-std::string build_path(const std::vector<std::string>& path_stack) {
-  std::string result;
-  for (const auto& part : path_stack) result += part;
-  return result;
-}
-
-}  // namespace mempeep::detail
-
 namespace mempeep {
+
+enum class LogLevel {
+  Errors,
+  Values,
+};
 
 /** @brief Simple log tracer.
  *
@@ -26,40 +22,35 @@ namespace mempeep {
  */
 struct LogTracer {
   std::ostream& out;
+  LogLevel level = LogLevel::Errors;
   bool ok = true;
-  std::vector<std::string> path_stack;
-  std::vector<std::uint64_t> addr_stack;
+  std::deque<std::string> path_stack;
+  std::deque<std::uint64_t> addr_stack;
 
   void error(mempeep::Error e) {
     ok = false;
-    std::print(
-      out,
-      "[{:08x}] {} = {}\n",
-      addr_stack.empty() ? 0 : addr_stack.back(),
-      detail::build_path(path_stack),
-      error_name(e)
-    );
+    std::print(out, "[{:08x}] ", addr_stack.empty() ? 0 : addr_stack.back());
+    for (const auto& part : path_stack) out << part;
+    std::print(out, " <{}>\n", error_name(e));
   }
 
   bool success() const { return ok; }
 
   template <typename T>
   void value(const T& val) {
-    std::string repr;
-    if constexpr (std::is_integral_v<T>) {
-      repr = std::format("{:#x}", val);
-    } else if constexpr (std::formattable<T, char>) {
-      repr = std::format("{}", val);
-    } else {
-      repr = "...";
+    if (level >= LogLevel::Values) {
+      std::string repr;
+      if constexpr (std::is_integral_v<T>) {
+        repr = std::format("{:#x}", val);
+      } else if constexpr (std::formattable<T, char>) {
+        repr = std::format("{}", val);
+      } else {
+        repr = "...";
+      }
+      std::print(out, "[{:08x}] ", addr_stack.empty() ? 0 : addr_stack.back());
+      for (const auto& part : path_stack) out << part;
+      std::print(out, " = {}\n", repr);
     }
-    std::print(
-      out,
-      "[{:08x}] {} = {}\n",
-      addr_stack.empty() ? 0 : addr_stack.back(),
-      detail::build_path(path_stack),
-      repr
-    );
   }
 
   template <typename Item>
