@@ -9,7 +9,7 @@
 #include <mempeep/concepts/descriptor.hpp>
 #include <mempeep/concepts/primitive.hpp>
 #include <mempeep/detail/member_traits.hpp>
-#include <mempeep/fields.hpp>
+#include <mempeep/fields_items.hpp>
 #include <optional>  // std::optional
 #include <string>    // std::string
 #include <vector>    // std::vector
