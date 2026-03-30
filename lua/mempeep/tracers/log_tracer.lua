@@ -14,16 +14,7 @@ end
 local function build_path(stack)
   local parts = {}
   for _, label in ipairs(stack) do
-    if type(label) == "number" then
-      local prev = parts[#parts]
-      if prev then
-        parts[#parts] = prev .. "[" .. label .. "]"
-      else
-        parts[#parts + 1] = "[" .. label .. "]"
-      end
-    else
-      parts[#parts + 1] = label
-    end
+    parts[#parts + 1] = label
   end
   return table.concat(parts, ".")
 end
@@ -44,7 +35,7 @@ function M.new(out)
     self.ok = false
     local addr = self._addr_stack[#self._addr_stack] or 0
     local path = build_path(self._path_stack)
-    out:write(string.format("[%s] %s = [ERROR %d]\n", fmt_addr(addr), path, e))
+    out:write(string.format("[%s] %s = <%s>\n", fmt_addr(addr), path, e))
   end
 
   function t:success()
@@ -86,7 +77,7 @@ function M.new(out)
   end
 
   function t:begin_element(address, index)
-    self._path_stack[#self._path_stack + 1] = index
+    self._path_stack[#self._path_stack + 1] = "[" .. index .. "]"
   end
 
   function t:end_element()
