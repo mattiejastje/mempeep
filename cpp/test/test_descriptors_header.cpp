@@ -1,4 +1,4 @@
 // not a doctest to ensure no other includes
-#include <mempeep/descriptor.hpp>
+#include <mempeep/descriptors.hpp>
 
 int main() { return 0; }

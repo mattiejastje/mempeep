@@ -1,8 +1,8 @@
 #pragma once
 
-#include <concepts>                // std::same_as, std::convertible_to
-#include <cstdint>                 // std::uint64_t, std::size_t
-#include <mempeep/descriptor.hpp>  // Primitive, Pad (representative tag types)
+#include <concepts>                 // std::same_as, std::convertible_to
+#include <cstdint>                  // std::uint64_t, std::size_t
+#include <mempeep/descriptors.hpp>  // Primitive, Pad (representative tag types)
 #include <mempeep/errors.hpp>       // Error
 
 namespace mempeep {

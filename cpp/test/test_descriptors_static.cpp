@@ -1,6 +1,6 @@
 // not a doctest since we only need static_asserts
 #include <concepts>
-#include <mempeep/descriptor.hpp>
+#include <mempeep/descriptors.hpp>
 #include <optional>
 #include <vector>
 

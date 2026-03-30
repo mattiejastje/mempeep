@@ -3,7 +3,7 @@
 #include <deque>       // std::deque (used as iterable stack)
 #include <format>      // std::format
 #include <functional>  // std::function
-#include <mempeep/descriptor.hpp>
+#include <mempeep/descriptors.hpp>
 #include <nameof.hpp>
 #include <print>   // std::print
 #include <ranges>  // std::ranges
