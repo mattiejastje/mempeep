@@ -23,7 +23,7 @@ do
       .. "\x16\x00\x00\x00" -- b = 22
       .. "\x21\x00\x00\x00" -- c = 33
   )
-  out = mock_out({ "[00000000] .inner.a = 0xb", "[00000004] .inner.b = 0x16", "[00000008] .c = 0x21" })
+  local out = mock_out({ "[00000000] .inner.a = 0xb", "[00000004] .inner.b = 0x16", "[00000008] .c = 0x21" })
   local tracer = log_tracer.make_stream_log_tracer(out, log_tracer.log_level.VALUES)
   local v, ok = read.read(Outer, 0, reader, tracer)
   assert(ok)
