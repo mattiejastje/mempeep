@@ -276,10 +276,6 @@ template <
     *cursor, reader, tracer, end_ptr
   );
   if (!cursor) return {};
-  if (begin_ptr == 0) {
-    tracer.error(Error::ADDRESS_NULL);
-    return cursor;
-  }
   if (begin_ptr > end_ptr) {
     tracer.error(Error::VECTOR_INVALID_RANGE);
     return cursor;
