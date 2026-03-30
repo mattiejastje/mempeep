@@ -10,15 +10,6 @@ local function fmt_addr(addr)
   return string.format("%016x", addr)
 end
 
---- build the display path from the path stack
-local function build_path(stack)
-  local parts = {}
-  for _, label in ipairs(stack) do
-    parts[#parts + 1] = label
-  end
-  return table.concat(parts, ".")
-end
-
 --- Create a new log tracer instance.
 -- @param out file handle to write output to (default: io.stdout)
 -- @return tracer table implementing the mempeep tracer interface
@@ -34,7 +25,7 @@ function M.new(out)
   function t:error(e)
     self.ok = false
     local addr = self._addr_stack[#self._addr_stack] or 0
-    local path = build_path(self._path_stack)
+    local path = table.concat(self._path_stack)
     out:write(string.format("[%s] %s = <%s>\n", fmt_addr(addr), path, e))
   end
 
@@ -44,7 +35,7 @@ function M.new(out)
 
   function t:value(v)
     local addr = self._addr_stack[#self._addr_stack] or 0
-    local path = build_path(self._path_stack)
+    local path = table.concat(self._path_stack)
     local repr
     if type(v) == "number" then
       if math.type(v) == "integer" then
@@ -66,7 +57,7 @@ function M.new(out)
 
   function t:begin_fields_item(address, item)
     if item.tag == "Field" then
-      self._path_stack[#self._path_stack + 1] = item.key
+      self._path_stack[#self._path_stack + 1] = "." .. item.key
     else
       self._path_stack[#self._path_stack + 1] = false -- sentinel
     end
