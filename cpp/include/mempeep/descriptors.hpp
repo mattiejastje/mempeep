@@ -6,7 +6,7 @@
 #include <concepts>  // std::same_as
 #include <cstddef>   // std::size_t
 #include <mempeep/concepts/address.hpp>
-#include <mempeep/concepts/descriptors.hpp>
+#include <mempeep/concepts/descriptor.hpp>
 #include <mempeep/concepts/primitive.hpp>
 #include <mempeep/detail/member_traits.hpp>
 #include <mempeep/fields.hpp>
