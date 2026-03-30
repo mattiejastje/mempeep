@@ -1,11 +1,12 @@
 #pragma once
 
-#include <deque>  // std::deque (used as iterable stack)
-#include <format>
+#include <deque>       // std::deque (used as iterable stack)
+#include <format>      // std::format
+#include <functional>  // std::function
 #include <mempeep/descriptor.hpp>
 #include <nameof.hpp>
-#include <ostream>
-#include <print>
+#include <print>   // std::print
+#include <ranges>  // std::ranges
 
 namespace mempeep {
 
@@ -14,6 +15,33 @@ enum class LogLevel {
   Values,
 };
 
+/**
+ * @brief A single structured log entry produced during a read.
+ *
+ * Carries either a successfully read value or an error code, along with
+ * the remote address and the dot-notation path to the field being read.
+ * Callers may inspect `payload` to distinguish values from errors.
+ */
+struct LogEntry {
+  /** @brief Kind of log entry. */
+  enum class Kind { Value, Error };
+
+  /** @brief Remote address at which the read was attempted. */
+  std::uint64_t address;
+
+  /** @brief Path to the field. */
+  std::string path;
+
+  /** @brief Formatted string representation of the value or error name. */
+  std::string text;
+
+  /** @brief Whether this entry carries a value or an error code. */
+  Kind kind;
+};
+
+/** @brief Callback type invoked once per log entry. */
+using LogCallback = std::function<void(const LogEntry&)>;
+
 /** @brief Simple log tracer.
  *
  * Logs every primitive read and every error encountered during a read.
@@ -21,7 +49,7 @@ enum class LogLevel {
  * Tracks whether any error occurred.
  */
 struct LogTracer {
-  std::ostream& out;
+  LogCallback on_entry;
   LogLevel level = LogLevel::Errors;
   bool ok = true;
   std::deque<std::string> path_stack;
@@ -29,9 +57,14 @@ struct LogTracer {
 
   void error(mempeep::Error e) {
     ok = false;
-    std::print(out, "[{:08x}] ", addr_stack.empty() ? 0 : addr_stack.back());
-    for (const auto& part : path_stack) out << part;
-    std::print(out, " <{}>\n", error_name(e));
+    on_entry(
+      LogEntry{
+        .address = addr_stack.empty() ? 0u : addr_stack.back(),
+        .path = std::ranges::to<std::string>(std::views::join(path_stack)),
+        .text = std::string(error_name(e)),
+        .kind = LogEntry::Kind::Error,
+      }
+    );
   }
 
   bool success() const { return ok; }
@@ -47,9 +80,14 @@ struct LogTracer {
       } else {
         repr = "...";
       }
-      std::print(out, "[{:08x}] ", addr_stack.empty() ? 0 : addr_stack.back());
-      for (const auto& part : path_stack) out << part;
-      std::print(out, " = {}\n", repr);
+      on_entry(
+        LogEntry{
+          .address = addr_stack.empty() ? 0u : addr_stack.back(),
+          .path = std::ranges::to<std::string>(std::views::join(path_stack)),
+          .text = std::move(repr),
+          .kind = LogEntry::Kind::Value,
+        }
+      );
     }
   }
 
@@ -78,5 +116,22 @@ struct LogTracer {
 
   void end_desc() { addr_stack.pop_back(); }
 };
+
+[[nodiscard]] LogTracer make_stream_log_tracer(
+  std::ostream& out, LogLevel level = LogLevel::Errors
+) {
+  return LogTracer{
+    .on_entry =
+      [&out](const LogEntry& entry) {
+        const auto addr_str = std::format("[{:08x}]", entry.address);
+        if (entry.kind == LogEntry::Kind::Error) {
+          std::print(out, "{} {} <{}>\n", addr_str, entry.path, entry.text);
+        } else {
+          std::print(out, "{} {} = {}\n", addr_str, entry.path, entry.text);
+        }
+      },
+    .level = level,
+  };
+}
 
 }  // namespace mempeep
