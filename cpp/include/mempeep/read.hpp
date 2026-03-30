@@ -138,7 +138,7 @@ template <
   address_t<MemoryReader> address,
   const MemoryReader& reader,
   Tracer& tracer,
-  detail::member_class_t<M>& out  // ensure out.*M is valid
+  member_class_t<M>& out  // ensure out.*M is valid
 ) {
   return read_value<Desc>(address, reader, tracer, out.*M);
 }
@@ -311,7 +311,7 @@ template <
   IsTracer Tracer>
   requires(
     std::numeric_limits<address_t<MemoryReader>>::max()
-    <= std::numeric_limits<detail::member_type_t<Next>>::max()
+    <= std::numeric_limits<member_type_t<Next>>::max()
   )
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   CircularList<Desc, Next, MaxLen>,

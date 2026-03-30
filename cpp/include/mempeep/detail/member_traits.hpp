@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-namespace mempeep::detail {
+namespace mempeep {
 
 template <auto M>
   requires std::is_member_object_pointer_v<decltype(M)>
@@ -20,4 +20,4 @@ using member_class_t = typename member_traits<M>::class_type;
 template <auto M>
 using member_type_t = typename member_traits<M>::member_type;
 
-}  // namespace mempeep::detail
+}  // namespace mempeep

@@ -6,7 +6,7 @@ struct Obj {
   int* c;
 };
 
-static_assert(std::same_as<mempeep::detail::member_class_t<&Obj::c>, Obj>);
-static_assert(std::same_as<mempeep::detail::member_type_t<&Obj::c>, int*>);
+static_assert(std::same_as<mempeep::member_class_t<&Obj::c>, Obj>);
+static_assert(std::same_as<mempeep::member_type_t<&Obj::c>, int*>);
 
 int main() { return 0; };

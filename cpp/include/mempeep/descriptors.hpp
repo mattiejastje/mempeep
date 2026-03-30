@@ -150,8 +150,8 @@ struct Vector {
  *                infinite loops on corrupt data.
  */
 template <IsDescriptor Desc, auto Next, std::size_t MaxLen>
-  requires std::same_as<detail::member_class_t<Next>, native_type_t<Desc>>
-           && IsAddress<detail::member_type_t<Next>>
+  requires std::same_as<member_class_t<Next>, native_type_t<Desc>>
+           && IsAddress<member_type_t<Next>>
 struct CircularList {
   using native_type = std::vector<native_type_t<Desc>>;
 };

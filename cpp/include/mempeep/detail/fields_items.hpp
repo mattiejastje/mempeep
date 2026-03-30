@@ -22,7 +22,7 @@ namespace mempeep {
  * @tparam M    The field to deserialize into (where it is copied to natively).
  */
 template <IsDescriptor Desc, auto M>
-  requires std::same_as<native_type_t<Desc>, detail::member_type_t<M>>
+  requires std::same_as<native_type_t<Desc>, member_type_t<M>>
 struct Field {
   using fields_item_tag = void;
 };
