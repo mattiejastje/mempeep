@@ -33,6 +33,8 @@ constexpr std::string_view error_name(Error e) {
       return "VECTOR_MISALIGNED";
     case Error::VECTOR_TOO_LONG:
       return "VECTOR_TOO_LONG";
+    default:
+      return "UNKNOWN_ERROR";
   }
 }
 
