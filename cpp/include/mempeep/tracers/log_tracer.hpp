@@ -41,6 +41,25 @@ struct LogEntry {
   Kind kind;
 };
 
+}  // namespace mempeep
+
+// formatter for LogEntry, must be defined out of mempeep scope
+template <>
+struct std::formatter<mempeep::LogEntry> {
+  constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const mempeep::LogEntry& entry, FormatContext& ctx) const {
+    const auto sep
+      = (entry.kind == mempeep::LogEntry::Kind::VAL) ? " = " : " ! ";
+    return std::format_to(
+      ctx.out(), "[{:08x}] {}{}{}", entry.address, entry.path, sep, entry.text
+    );
+  }
+};
+
+namespace mempeep {
+
 /** @brief Callback type invoked once per log entry. */
 using LogCallback = std::function<void(const LogEntry&)>;
 
@@ -119,21 +138,9 @@ struct LogTracer {
   void end_desc() { addr_stack.pop_back(); }
 };
 
-[[nodiscard]] LogTracer make_stream_log_tracer(
-  std::ostream& out, LogLevel level = LogLevel::ERRORS
-) {
-  return LogTracer{
-    .on_entry =
-      [&out](const LogEntry& entry) {
-        const auto addr_str = std::format("[{:08x}]", entry.address);
-        if (entry.kind == LogEntry::Kind::ERR) {
-          std::print(out, "{} {} <{}>\n", addr_str, entry.path, entry.text);
-        } else {
-          std::print(out, "{} {} = {}\n", addr_str, entry.path, entry.text);
-        }
-      },
-    .level = level,
-  };
+/** @brief Callback which simply prints the log entry to a stream. */
+LogCallback on_entry_print(std::ostream& out) {
+  return [&out](const LogEntry& entry) { std::print(out, "{}\n", entry); };
 }
 
 }  // namespace mempeep

@@ -23,7 +23,7 @@ TEST_CASE("successful read") {
   static constexpr uint8_t base{4};
   auto reader = test::MockMemoryReader<uint8_t>{test::game_data};
   test::Game game{};
-  auto tracer = make_stream_log_tracer(std::cout, LogLevel::VALUES);
+  auto tracer = LogTracer{on_entry_print(std::cout), LogLevel::VALUES};
   CHECK(read<test::TGame>(base, reader, tracer, game));
   SUBCASE("level") { CHECK_EQ(game.level, 17); }
   SUBCASE("message") {

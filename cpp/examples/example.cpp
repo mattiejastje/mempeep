@@ -77,7 +77,7 @@ static void read_entity(const char (&data)[N]) {
   // In real applications, you would supply the reader.
   test::MockMemoryReader<uint8_t> reader{data};
   Entity e{};
-  auto tracer = make_stream_log_tracer(std::cout, LogLevel::VALUES);
+  auto tracer = LogTracer{on_entry_print(std::cout), LogLevel::VALUES};
   const bool ok = mempeep::read<TEntity>(uint8_t{0}, reader, tracer, e);
   report(ok, e);
 }
