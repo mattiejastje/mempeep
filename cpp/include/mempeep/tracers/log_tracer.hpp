@@ -139,7 +139,7 @@ struct LogTracer {
 };
 
 /** @brief Callback which simply prints the log entry to a stream. */
-LogCallback on_entry_print(std::ostream& out) {
+inline LogCallback on_entry_print(std::ostream& out) {
   return [&out](const LogEntry& entry) { std::print(out, "{}\n", entry); };
 }
 
