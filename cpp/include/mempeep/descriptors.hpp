@@ -8,8 +8,8 @@
 #include <mempeep/detail/concepts/address.hpp>
 #include <mempeep/detail/concepts/descriptor.hpp>
 #include <mempeep/detail/concepts/primitive.hpp>
-#include <mempeep/detail/member_traits.hpp>
 #include <mempeep/detail/fields_items.hpp>
+#include <mempeep/detail/member_traits.hpp>
 #include <optional>  // std::optional
 #include <string>    // std::string
 #include <vector>    // std::vector

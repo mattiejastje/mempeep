@@ -3,9 +3,9 @@
 #include <concepts>  // std::unsigned_integral
 #include <cstdint>   // std::uint64_t
 #include <limits>    // std::numeric_limits
+#include <mempeep/descriptors.hpp>
 #include <mempeep/detail/concepts/memory.hpp>
 #include <mempeep/detail/concepts/tracer.hpp>
-#include <mempeep/descriptors.hpp>
 #include <optional>  // std::optional
 #include <utility>   // std::ignore
 
@@ -115,8 +115,7 @@ template <
   if (len == 0) {
     tracer.value(out);
     return cursor;
-  }
-  else if (reader(*cursor, len, out.data())) {
+  } else if (reader(*cursor, len, out.data())) {
     tracer.value(out);
     return advance(*cursor, len, tracer);
   } else {
@@ -165,10 +164,7 @@ template <
   return read_value<Desc>(address, reader, tracer, out.*M);
 }
 
-template <
-  IsFieldsItem FieldsItem,
-  IsMemoryReader MemoryReader,
-  IsTracer Tracer>
+template <IsFieldsItem FieldsItem, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_fields_item(
   FieldsItem item,
   address_t<MemoryReader> base,
