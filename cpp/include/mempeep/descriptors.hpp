@@ -171,4 +171,19 @@ struct Struct<T, Fields<Items...>> {
   using native_type = T;
 };
 
+/**
+ * @brief Reads a descriptor and note an error if the value is out of bounds.
+ *
+ * The native type must support comparison.
+ *
+ * @tparam Desc The descriptor to read.
+ * @tparam Min  The minimum value.
+ * @tparam Min  The maximum value.
+ */
+template <IsDescriptor Desc, native_type_t<Desc> Min, native_type_t<Desc> Max>
+  requires(Min <= Max)
+struct Bounded {
+  using native_type = native_type_t<Desc>;
+};
+
 }  // namespace mempeep

@@ -71,6 +71,28 @@ template <IsPrimitive T, IsMemoryReader MemoryReader, IsTracer Tracer>
 }
 
 template <
+  IsDescriptor Desc,
+  native_type_t<Desc> Min,
+  native_type_t<Desc> Max,
+  IsMemoryReader MemoryReader,
+  IsTracer Tracer>
+[[nodiscard]] Cursor<MemoryReader> read_value_impl(
+  Bounded<Desc, Min, Max>,
+  address_t<MemoryReader> address,
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<Bounded<Desc, Min, Max>>& out  // T
+) {
+  auto cursor = read_value<Desc>(address, reader, tracer, out);
+  if (cursor) {
+    if ((out < Min) || (out > Max)) {
+      tracer.error(Error::PRIMITIVE_OUT_OF_BOUNDS);
+    }
+  }
+  return cursor;
+}
+
+template <
   std::unsigned_integral LenT,
   std::size_t MaxLen,
   IsMemoryReader MemoryReader,
