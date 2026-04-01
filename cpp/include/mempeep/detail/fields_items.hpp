@@ -25,6 +25,7 @@ template <IsDescriptor Desc, auto M>
   requires std::same_as<native_type_t<Desc>, member_type_t<M>>
 struct Field {
   using fields_item_tag = void;
+  using desc_type = Desc;
 };
 
 /**
@@ -35,6 +36,7 @@ struct Field {
 template <std::size_t N>
 struct Pad {
   using fields_item_tag = void;
+  static constexpr std::size_t skip = N;
 };
 
 /**
@@ -50,6 +52,7 @@ struct Pad {
 template <std::size_t N>
 struct Seek {
   using fields_item_tag = void;
+  static constexpr std::size_t seek = N;
 };
 
 /**
