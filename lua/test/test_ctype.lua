@@ -5,7 +5,7 @@ local Int8 = d.Primitive("i1")
 local Int16 = d.Primitive("i2")
 local Int32 = d.Primitive("i4")
 local Int64 = d.Primitive("i8")
-local Point = d.Struct("Point", { d.Field(Int64, "x"), d.Field(Int32, "y") })
+local Point = d.Struct("Point", { d.Field(Int16, "x"), d.Seek(8), d.Field(Int16, "y"), d.Skip(2) })
 local Node = d.Struct("Node", { d.Field(Int64, "data"), d.Field(d.RawAddr(), "next") })
 
 do
