@@ -16,8 +16,8 @@ local mock_out = function(lines)
 end
 
 do
-  local Inner = d.Struct(d.Field(Int32, "a"), d.Field(Int32, "b"))
-  local Outer = d.Struct(d.Field(Inner, "inner"), d.Field(Int32, "c"))
+  local Inner = d.Struct("Inner", { d.Field(Int32, "a"), d.Field(Int32, "b") })
+  local Outer = d.Struct("Outer", { d.Field(Inner, "inner"), d.Field(Int32, "c") })
   local reader = memory.mock_memory_reader(
     "I4",
     "\x0B\x00\x00\x00" -- a = 11

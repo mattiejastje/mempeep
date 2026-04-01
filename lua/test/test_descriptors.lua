@@ -42,6 +42,6 @@ do
   d.assert_descriptor(d.NullableRef(Int32))
   d.assert_descriptor(d.Array(Int32, 10))
   d.assert_descriptor(d.Vector(Int32, 0x1000))
-  Node = d.assert_descriptor(d.Struct(d.Field(Int32, "data"), d.Field(d.RawAddr(), "next")))
+  Node = d.assert_descriptor(d.Struct("Node", { d.Field(Int32, "data"), d.Field(d.RawAddr(), "next") }))
   d.assert_descriptor(d.CircularList(Node, "next", 0x1000))
 end

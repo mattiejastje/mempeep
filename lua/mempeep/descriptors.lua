@@ -189,8 +189,8 @@ end
 --- Read a struct by applying a sequence of field items in order.
 -- @param ... Items produced by `Field()`, `Skip()`, or `Seek()`
 -- @return Struct descriptor
-function M.Struct(...)
-  return { tag = "Struct", fields = M.assert_fields({ ... }) }
+function M.Struct(name, fields)
+  return { tag = "Struct", name = name, fields = M.assert_fields(fields) }
 end
 
 --------------------------------------------------------------------------------
