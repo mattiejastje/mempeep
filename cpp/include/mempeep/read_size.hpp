@@ -15,10 +15,7 @@ namespace mempeep {
  * @tparam AddrSize Size in bytes of the remote address type.
  */
 template <IsDescriptor Desc, std::size_t AddrSize>
-constexpr std::size_t read_size = [] {
-  static_assert(false, "unhandled descriptor in read_size");
-  return 0;
-}();
+constexpr std::size_t read_size;
 
 template <typename T, std::size_t AddrSize>
 constexpr std::size_t read_size<Primitive<T>, AddrSize> = sizeof(T);
