@@ -29,7 +29,7 @@ struct Field {
 };
 
 /**
- * @brief Skipping relative to the current position in the layout.
+ * @brief Skip relative to the current position in the layout.
  * @tparam N Number of bytes.
  *           Its value must be representable by address_t<MemoryReader>.
  */
