@@ -42,27 +42,6 @@ struct RawAddr {
 };
 
 /**
- * @brief Reads a length-prefixed string.
- *
- * Reads a length value of type `LenT` from the current address, then reads
- * that many bytes as the string content. The cursor advances past both the
- * length prefix and the string content.
- *
- * @tparam LenT   The type of the length prefix.
- * @tparam MaxLen The maximum length allowed before reporting
- *                `Error::STRING_TOO_LONG`.
- */
-template <std::unsigned_integral LenT, std::size_t MaxLen>
-  requires(
-    IsPrimitive<LenT>
-    && std::numeric_limits<LenT>::max()
-         <= std::numeric_limits<std::size_t>::max()
-  )
-struct LenString {
-  using native_type = std::string;
-};
-
-/**
  * @brief Reads an address and follows it, reading the pointee
  * using `Desc`.
  *

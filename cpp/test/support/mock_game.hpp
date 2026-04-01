@@ -52,7 +52,6 @@ using TPlayer = Struct<
 
 struct Game {
   uint8_t level;
-  std::string message;
   Player player;
   std::array<Pos, 2> hands;
   std::vector<Pos> pets;
@@ -64,7 +63,6 @@ using TGame = Struct<
   Fields<
     Seek<1>,
     Field<TUInt8, &Game::level>,
-    Field<Ref<LenString<uint8_t, 0x40>>, &Game::message>,
     Seek<4>,
     Field<TPlayer, &Game::player>,
     Field<Array<TPos, 2>, &Game::hands>,
@@ -74,8 +72,8 @@ using TGame = Struct<
 static constexpr char game_data[]
   = "\x00\x00\x00\x00"  // 0:  unused
     "\x00\x11"          // 4:  pad(1), level = 17
-    "\x46\x00"          // 6:  message ref string -> 70, pad(1)
-    "\x00\x00\x7b\x00"  // 8:  pad(2), health = 123, pad(1)
+    "\x00\x00\x00\x00"  // 6:  pad(4)
+    "\x7b\x00"          // 10: health = 123, pad(1)
     "\x0b\x16\x00\x00"  // 12: pos = (11, 22, pad(2))
     "\x00"              // 16: target_ptr = 0
     "\x02"              // 17: shop_ptr = 2
@@ -99,9 +97,6 @@ static constexpr char game_data[]
     "\x12\x40"          // 62: caves[1] = (18, 64)
     "\x14\x42"          // 64: caves[2] = (20, 66)
     "\x16\x3c"          // 66: caves[3] = (22, 60)
-    "\x00\x00"          // 68: unused
-    "\x0b"              // 70: message len = 11
-    "hello world"       // 71: message text = "hello world"
-    "\x00\x00";         // 82: unused
+    "\x00\x00";         // 68: unused
 
 }  // namespace mempeep::test

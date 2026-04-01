@@ -26,10 +26,6 @@ TEST_CASE("successful read") {
   auto tracer = LogTracer{on_entry_print(std::cout), LogLevel::VALUES};
   CHECK(read<test::TGame>(base, reader, tracer, game));
   SUBCASE("level") { CHECK_EQ(game.level, 17); }
-  SUBCASE("message") {
-    CHECK_EQ(game.message.size(), 11);
-    CHECK_EQ(game.message, std::string("hello world"));
-  }
   SUBCASE("player") {
     CHECK_EQ(game.player.health, 123);
     CHECK_EQ(game.player.pos.x, 11);

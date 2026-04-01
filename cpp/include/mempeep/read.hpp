@@ -92,38 +92,6 @@ template <
   return cursor;
 }
 
-template <
-  std::unsigned_integral LenT,
-  std::size_t MaxLen,
-  IsMemoryReader MemoryReader,
-  IsTracer Tracer>
-[[nodiscard]] Cursor<MemoryReader> read_value_impl(
-  LenString<LenT, MaxLen>,
-  address_t<MemoryReader> address,
-  const MemoryReader& reader,
-  Tracer& tracer,
-  native_type_t<LenString<LenT, MaxLen>>& out  // std::string
-) {
-  LenT len{};
-  auto cursor = read_value<Primitive<LenT>>(address, reader, tracer, len);
-  if (!cursor) return {};
-  if (len > MaxLen) {
-    tracer.error(Error::STRING_TOO_LONG);
-    return {};
-  }
-  out.resize(len);
-  if (len == 0) {
-    tracer.value(out);
-    return cursor;
-  } else if (reader(*cursor, len, out.data())) {
-    tracer.value(out);
-    return advance(*cursor, len, tracer);
-  } else {
-    tracer.error(Error::READ_FAILED);
-    return {};
-  }
-}
-
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_fields_item_impl(
   Pad<N> item,
