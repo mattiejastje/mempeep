@@ -106,9 +106,16 @@ function M.new(on_entry, level)
   return t
 end
 
-function M.make_stream_log_tracer(out, level)
-  out = out or io.stdout
+function M.on_entry_print(entry)
+  addr_str = fmt_addr(entry.address)
+  if entry.kind == M.log_entry_kind.ERR then
+    print(string.format("%s %s <%s>", addr_str, entry.path, entry.text))
+  else
+    print(string.format("%s %s = %s", addr_str, entry.path, entry.text))
+  end
+end
 
+function M.make_on_entry_write(out)
   local on_entry = function(entry)
     addr_str = fmt_addr(entry.address)
     if entry.kind == M.log_entry_kind.ERR then
@@ -117,8 +124,7 @@ function M.make_stream_log_tracer(out, level)
       out:write(string.format("%s %s = %s\n", addr_str, entry.path, entry.text))
     end
   end
-
-  return M.new(on_entry, level or M.log_level.ERRORS)
+  return on_entry
 end
 
 return M
