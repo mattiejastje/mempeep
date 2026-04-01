@@ -38,7 +38,6 @@ end
 do
   local Int32 = d.assert_descriptor(d.Primitive("i4"))
   d.assert_descriptor(d.RawAddr())
-  d.assert_descriptor(d.LenString("I4", 0x100))
   d.assert_descriptor(d.Ref(Int32))
   d.assert_descriptor(d.NullableRef(Int32))
   d.assert_descriptor(d.Array(Int32, 10))

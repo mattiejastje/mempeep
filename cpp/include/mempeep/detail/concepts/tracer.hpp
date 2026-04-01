@@ -31,7 +31,7 @@ concept IsTracer = requires(
   { tracer.error(error) } -> std::same_as<void>;
   { tracer.success() } -> std::convertible_to<bool>;
 
-  // Called after each successful Primitive or LenString read.
+  // Called after each successful Primitive read.
   // Checked with 0 as representative.
   { tracer.value(0) } -> std::same_as<void>;
 

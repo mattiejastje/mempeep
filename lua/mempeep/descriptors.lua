@@ -7,7 +7,6 @@ local M = {}
 local descriptor_tags = {
   Primitive = true,
   RawAddr = true,
-  LenString = true,
   Ref = true,
   NullableRef = true,
   Array = true,
@@ -126,10 +125,6 @@ end
 -- @return RawAddr descriptor
 function M.RawAddr()
   return { tag = "RawAddr" }
-end
-
-function M.LenString(len_fmt, max_len)
-  return { tag = "LenString", len_fmt = M.assert_uint_fmt(len_fmt), max_len = M.assert_count(max_len) }
 end
 
 --- Read an address and follow it, reading the pointee using `desc`.

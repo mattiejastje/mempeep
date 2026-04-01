@@ -66,28 +66,6 @@ do
 end
 
 -- ---------------------------------------------------------------------------
--- Strings
--- ---------------------------------------------------------------------------
-
-do
-  local LenString = d.LenString("I4", 0x100)
-  local reader = memory.mock_memory_reader("I4", "\x05\x00\x00\x00hello\0\0\0\0\0\0\0\0\0\0\0")
-  local tracer = ok_tracer.new()
-  local v, ok = read.read(LenString, 0, reader, tracer)
-  assert(ok)
-  assert(v == "hello")
-end
-
-do
-  local LenString = d.LenString("I4", 0x100)
-  local reader = memory.mock_memory_reader("I4", "\x05\x00\x00\x00hel")
-  local tracer = ok_tracer.new()
-  local v, ok = read.read(LenString, 0, reader, tracer)
-  assert(not ok)
-  assert(v == nil)
-end
-
--- ---------------------------------------------------------------------------
 -- Struct
 -- ---------------------------------------------------------------------------
 

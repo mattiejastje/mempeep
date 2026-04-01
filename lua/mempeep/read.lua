@@ -58,32 +58,6 @@ read_value_impl.RawAddr = function(desc, address, reader, tracer)
   return read_value({ tag = "Primitive", fmt = reader.fmt }, address, reader, tracer)
 end
 
---- LenString: read a length-prefixed string.
-read_value_impl.LenString = function(desc, address, reader, tracer)
-  local cursor, len = read_value({ tag = "Primitive", fmt = desc.len_fmt }, address, reader, tracer)
-  if not cursor then
-    return nil, nil
-  end
-
-  if len > desc.max_len then
-    tracer:error(errors.STRING_TOO_LONG)
-    return nil, nil
-  end
-
-  if len == 0 then
-    tracer:value("")
-    return cursor, ""
-  end
-
-  local str_bytes = reader:read(cursor, len)
-  if not str_bytes then
-    tracer:error(errors.READ_FAILED)
-    return nil, nil
-  end
-  tracer:value(str_bytes)
-  return advance(cursor, len, reader, tracer), str_bytes
-end
-
 --- Ref: read an address and follow it, reading the pointee using desc.desc.
 -- Reports ADDRESS_NULL if the address is zero.
 read_value_impl.Ref = function(desc, address, reader, tracer)
