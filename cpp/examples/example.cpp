@@ -17,12 +17,12 @@ struct Pos {
 };
 
 // 0: x
-// 1: pad
+// 1: skip
 // 2: y
-// 3: pad
+// 3: skip
 using TPos = Struct<
   Pos,
-  Fields<Field<TInt8, &Pos::x>, Pad<1>, Field<TInt8, &Pos::y>, Pad<1>>>;
+  Fields<Field<TInt8, &Pos::x>, Skip<1>, Field<TInt8, &Pos::y>, Skip<1>>>;
 
 struct Entity {
   int8_t id;
@@ -35,7 +35,7 @@ struct Entity {
 
 // 0-1: header
 // 2:   id
-// 3:   pad
+// 3:   skip
 // 4-7: pos
 // 8:   target_addr (raw address)
 // 9:   extra_pos (read address, follow)
@@ -45,7 +45,7 @@ using TEntity = Struct<
   Fields<
     Seek<2>,
     Field<TInt8, &Entity::id>,
-    Pad<1>,
+    Skip<1>,
     Field<TPos, &Entity::pos>,
     Field<RawAddr<uint8_t>, &Entity::target_addr>,
     Field<Ref<TPos>, &Entity::extra_pos>,
@@ -87,16 +87,16 @@ int main() {
   read_entity(
     "\x13\x37"          // 0-1:   header bytes
     "\x07"              // 2:     id = 7
-    "\x00"              // 3:     Pad<1>
-    "\x03\x00\xfe\x00"  // 4-7:   pos x=3, pad, y=-2, pad
+    "\x00"              // 3:     Skip<1>
+    "\x03\x00\xfe\x00"  // 4-7:   pos x=3, skip, y=-2, skip
     "\x0b"              // 8:     target_addr -> 0b
     "\x0f"              // 9:     extra_pos addr -> 0f
     "\x00"              // 0a:    opt_pos addr = null
     "\x13\x1f"          // 0b-0c: vec_pos begin/end -> 13/1f
     "\x00\x00"          // 0d-0e: gap
-    "\x05\x00\xff\x00"  // 0f-12: extra_pos x=5, pad, y=-1, pad
-    "\x02\x00\x04\x00"  // 13-12: vec_pos[0] x=2, pad, y=4, pad
-    "\x06\x00\x08\x00"  // 17-12: vec_pos[1] x=6, pad, y=8, pad
-    "\x01\x00\x03\x00"  // 1b-1e: vec_pos[2] x=1, pad, y=3, pad
+    "\x05\x00\xff\x00"  // 0f-12: extra_pos x=5, skip, y=-1, skip
+    "\x02\x00\x04\x00"  // 13-12: vec_pos[0] x=2, skip, y=4, skip
+    "\x06\x00\x08\x00"  // 17-12: vec_pos[1] x=6, skip, y=8, skip
+    "\x01\x00\x03\x00"  // 1b-1e: vec_pos[2] x=1, skip, y=3, skip
   );
 }

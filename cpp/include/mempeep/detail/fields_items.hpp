@@ -7,8 +7,8 @@
 #include <mempeep/detail/member_traits.hpp>
 
 // In this file we set up everything for the Struct descriptor.
-// The syntax is `Struct<T, Fields<Field<...>, Pad<...>, Seek<...>, ...>>`.
-// So we need `Field`, `Pad`, `Seek`, and `Fields`.
+// The syntax is `Struct<T, Fields<Field<...>, Skip<...>, Seek<...>, ...>>`.
+// So we need `Field`, `Skip`, `Seek`, and `Fields`.
 // `Struct` is defined in `descriptor.hpp` along with the other descriptors.
 
 namespace mempeep {
@@ -29,12 +29,12 @@ struct Field {
 };
 
 /**
- * @brief Padding relative to the current position in the layout.
+ * @brief Skipping relative to the current position in the layout.
  * @tparam N Number of bytes.
  *           Its value must be representable by address_t<MemoryReader>.
  */
 template <std::size_t N>
-struct Pad {
+struct Skip {
   using fields_item_tag = void;
   static constexpr std::size_t skip = N;
 };

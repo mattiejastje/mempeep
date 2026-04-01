@@ -12,15 +12,15 @@ struct Obj {
 using TObj = Struct<
   Obj,
   Fields<
-    Pad<4>,
+    Skip<4>,
     Field<Primitive<int32_t>, &Obj::x>,
-    Pad<8>,
+    Skip<8>,
     Field<Primitive<int32_t>, &Obj::y>>>;
 
 using TObjSeek = Struct<
   Obj,
   Fields<
-    Pad<4>,
+    Skip<4>,
     Field<Primitive<int32_t>, &Obj::x>,
     Seek<10>,
     Field<Primitive<int32_t>, &Obj::y>>>;

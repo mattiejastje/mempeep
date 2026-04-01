@@ -67,7 +67,7 @@ static_assert(IsPrimitive<std::array<int, 5>>);  // it is!
 static_assert(!IsPrimitive<std::vector<int>>);
 static_assert(!IsPrimitive<SomeStruct>);
 
-static_assert(IsFieldsItem<Pad<0>>);
+static_assert(IsFieldsItem<Skip<0>>);
 static_assert(IsFieldsItem<Seek<0>>);
 static_assert(IsFieldsItem<Field<Primitive<int>, &SomeStruct::y>>);
 static_assert(IsFieldsItem<Field<RawAddr<uint8_t>, &SomeStruct::addr1>>);

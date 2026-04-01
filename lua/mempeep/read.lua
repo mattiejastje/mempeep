@@ -263,13 +263,13 @@ end
 --------------------------------------------------------------------------------
 -- read_fields_item dispatch table
 -- Each entry is a function(item, base, address, reader, tracer) -> cursor, value
--- Pad and Seek return nil as value. Field returns the decoded value.
+-- Skip and Seek return nil as value. Field returns the decoded value.
 --------------------------------------------------------------------------------
 
 local read_fields_item_impl = {}
 
---- Pad: advance address by item.n bytes without reading.
-read_fields_item_impl.Pad = function(item, base, address, reader, tracer)
+--- Skip: advance address by item.n bytes without reading.
+read_fields_item_impl.Skip = function(item, base, address, reader, tracer)
   return advance(address, item.n, reader, tracer), nil
 end
 
@@ -290,7 +290,7 @@ end
 --- Dispatch a single fields item, advancing the cursor.
 -- Returns the new cursor and, for Field items, the decoded value (nil otherwise).
 -- The caller (read_value_impl.Struct) is responsible for assigning the value.
--- @param item fields item table (Field, Pad, or Seek)
+-- @param item fields item table (Field, Skip, or Seek)
 -- @param base integer base address of the enclosing struct
 -- @param address integer current address
 -- @param reader reader table { fmt, read }

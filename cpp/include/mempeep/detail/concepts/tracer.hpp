@@ -2,7 +2,7 @@
 
 #include <concepts>                 // std::same_as, std::convertible_to
 #include <cstdint>                  // std::uint64_t, std::size_t
-#include <mempeep/descriptors.hpp>  // Primitive, Pad (representative tag types)
+#include <mempeep/descriptors.hpp>  // Primitive, Skip (representative tag types)
 #include <mempeep/errors.hpp>       // Error
 
 namespace mempeep {
@@ -35,11 +35,11 @@ concept IsTracer = requires(
   // Checked with 0 as representative.
   { tracer.value(0) } -> std::same_as<void>;
 
-  // Called around each fields item (Field, Pad, Seek) inside a Struct.
-  // begin_item receives the address and a tag value (e.g. Pad<N>{},
-  // Field<Desc,M>{}, Seek<N>{}). Checked here with Pad<0> as a
+  // Called around each fields item (Field, Skip, Seek) inside a Struct.
+  // begin_item receives the address and a tag value (e.g. Skip<N>{},
+  // Field<Desc,M>{}, Seek<N>{}). Checked here with Skip<0> as a
   // representative.
-  { tracer.begin_fields_item(address, Pad<0>{}) } -> std::same_as<void>;
+  { tracer.begin_fields_item(address, Skip<0>{}) } -> std::same_as<void>;
   { tracer.end_fields_item() } -> std::same_as<void>;
 
   // Called around each element of a container

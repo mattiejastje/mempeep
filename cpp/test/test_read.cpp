@@ -101,10 +101,10 @@ TEST_CASE("failed read: invalid addresses") {
   }
 }
 
-TEST_CASE("failed read: pad overflow") {
+TEST_CASE("failed read: skip overflow") {
   struct Overflow {};
 
-  using TOverflow = Struct<Overflow, Fields<Pad<0xff>, Pad<0xff>>>;
+  using TOverflow = Struct<Overflow, Fields<Skip<0xff>, Skip<0xff>>>;
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Overflow overflow{};
   OkTracer tracer{};

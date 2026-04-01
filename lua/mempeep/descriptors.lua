@@ -20,7 +20,7 @@ local descriptor_tags = {
 local fields_item_tags = {
   Field = true,
   Seek = true,
-  Pad = true,
+  Skip = true,
 }
 
 --------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ end
 -- @return v
 function M.assert_fields_item(v)
   M.assert_table(v)
-  assert(fields_item_tags[v.tag], "expected a fields item (Field, Pad, or Seek), got " .. tostring(v.tag))
+  assert(fields_item_tags[v.tag], "expected a fields item (Field, Skip, or Seek), got " .. tostring(v.tag))
   return v
 end
 
@@ -192,7 +192,7 @@ function M.CircularList(desc, next_key, max_len)
 end
 
 --- Read a struct by applying a sequence of field items in order.
--- @param ... Items produced by `Field()`, `Pad()`, or `Seek()`
+-- @param ... Items produced by `Field()`, `Skip()`, or `Seek()`
 -- @return Struct descriptor
 function M.Struct(...)
   return { tag = "Struct", fields = M.assert_fields({ ... }) }
@@ -212,9 +212,9 @@ end
 
 --- Skip `n` bytes relative to the current position.
 -- @param n number of bytes to skip (non-negative integer)
--- @return Pad fields item
-function M.Pad(n)
-  return { tag = "Pad", n = M.assert_count(n) }
+-- @return Skip fields item
+function M.Skip(n)
+  return { tag = "Skip", n = M.assert_count(n) }
 end
 
 --- Seek to an absolute byte offset from the struct base address.

@@ -103,12 +103,12 @@ do
   assert(v.y == 20)
 end
 
--- Struct with Pad: a=1 at offset 0, 4 pad bytes, b=2 at offset 8
+-- Struct with Skip: a=1 at offset 0, 4 skip bytes, b=2 at offset 8
 do
-  local Padded = d.Struct(d.Field(Int32, "a"), d.Pad(4), d.Field(Int32, "b"))
+  local Skipped = d.Struct(d.Field(Int32, "a"), d.Skip(4), d.Field(Int32, "b"))
   local reader = memory.mock_memory_reader("I4", "\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Padded, 0, reader, tracer)
+  local v, ok = read.read(Skipped, 0, reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(v.a == 1)

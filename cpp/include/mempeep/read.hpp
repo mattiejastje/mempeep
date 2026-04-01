@@ -94,7 +94,7 @@ template <
 
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] Cursor<MemoryReader> read_fields_item_impl(
-  Pad<N> item,
+  Skip<N> item,
   address_t<MemoryReader>,
   address_t<MemoryReader> address,
   const MemoryReader&,
