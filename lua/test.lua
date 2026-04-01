@@ -4,6 +4,7 @@ for _, name in ipairs({
   "test_descriptors",
   "test_read",
   "test_log_tracer",
+  "test_ctype",
 }) do
   local ok, err = pcall(require, name)
   if ok then
