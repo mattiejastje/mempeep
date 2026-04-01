@@ -6,10 +6,7 @@
 namespace mempeep {
 
 /**
- * @brief Number of bytes a descriptor occupies if known at compile time.
- *
- * Only fixed-size descriptors are supported. Seek is also excluded because it
- * does not consume bytes sequentially.
+ * @brief Number of bytes a descriptor will advance the address when reading.
  *
  * Various descriptors consume address-sized words, so AddrSize must be
  * provided.
