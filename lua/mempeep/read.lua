@@ -127,11 +127,6 @@ read_value_impl.Vector = function(desc, address, reader, tracer)
     return nil, nil
   end
 
-  if begin_ptr == 0 then
-    tracer:error(errors.ADDRESS_NULL)
-    return cursor, nil
-  end
-
   if begin_ptr > end_ptr then
     tracer:error(errors.VECTOR_INVALID_RANGE)
     return cursor, nil
