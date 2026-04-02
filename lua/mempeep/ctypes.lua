@@ -32,7 +32,10 @@ fmt_to_ctype_impl.d = "double"
 
 local fmt_to_ctype = function(fmt)
   typ = fmt_to_ctype_impl[fmt]
-  assert(typ, "unknown format '" .. tostring(fmt) .. "'")
+  if typ then return typ end
+  local n = fmt:match("^c(%d+)$")
+  if n then return "std::array<char, " .. n .. ">" end
+  error("unknown format '" .. tostring(fmt) .. "'")
   return typ
 end
 
@@ -80,7 +83,11 @@ end
 
 remote_ctype_impl.Vector = function(desc, addr_size)
   local _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
-  return 2 * addr_size, "std::vector<" .. ref_ctype .. ">"
+  return 2 * addr_size, ref_ctype .. "*"
+end
+
+native_ctype_impl.Vector = function(desc)
+  return "std::vector<" .. M.native_ctype(desc.desc) .. ">"
 end
 
 remote_ctype_impl.CircularList = function(desc, addr_size)
@@ -115,14 +122,21 @@ function M.remote_struct_cdecl(desc, addr_size)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   print(string.format("struct %s {", desc.name))
   local offset = 0
-  for _, item in ipairs(desc.fields) do
+  for i, item in ipairs(desc.fields) do
     if item.tag == "Skip" then
+      print(string.format("  int8_t _unknown%d[0x%x];", i, item.n))
       offset = offset + item.n
     elseif item.tag == "Seek" then
+      print(string.format("  int8_t _unknown%d[0x%x];", i, item.n - offset))
       offset = item.n
     elseif item.tag == "Field" then
       local field_size, field_ctype = M.remote_ctype(item.desc, addr_size)
-      print(string.format("  %s %s;  // offset 0x%x", field_ctype, item.key, offset))
+      if item.desc.tag == "Vector" then
+        print(string.format("  %s %s_begin;  // offset 0x%x", field_ctype, item.key, offset))
+        print(string.format("  %s %s_end;    // offset 0x%x", field_ctype, item.key, offset + addr_size))
+      else
+        print(string.format("  %s %s;  // offset 0x%x", field_ctype, item.key, offset))
+      end
       offset = offset + field_size
     end
   end

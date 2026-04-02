@@ -7,6 +7,7 @@ local Int32 = d.Primitive("i4")
 local Int64 = d.Primitive("i8")
 local Point = d.Struct("Point", { d.Field(Int16, "x"), d.Seek(8), d.Field(Int16, "y"), d.Skip(2) })
 local Node = d.Struct("Node", { d.Field(Int64, "data"), d.Field(d.RawAddr(), "next") })
+local Points = d.Struct("Points", { d.Field(d.Vector(Point, 0x1000), "points") })
 
 do
   local size, typ = c.remote_ctype(Int8, 4)
@@ -71,13 +72,13 @@ end
 do
   local size, typ = c.remote_ctype(d.Vector(Point, 0x1000), 4)
   assert(size == 8)
-  assert(typ == "std::vector<Point>")
+  assert(typ == "Point*")
 end
 
 do
   local size, typ = c.remote_ctype(d.Vector(Point, 0x1000), 8)
   assert(size == 16)
-  assert(typ == "std::vector<Point>")
+  assert(typ == "Point*")
 end
 
 do
@@ -93,6 +94,8 @@ do
 end
 
 do
-  c.remote_struct_cdecl(Point)
+  c.remote_struct_cdecl(Point, 4)
+  c.remote_struct_cdecl(Points, 4)
   c.native_struct_cdecl(Point)
+  c.native_struct_cdecl(Points)
 end
