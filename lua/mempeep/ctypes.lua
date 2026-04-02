@@ -156,4 +156,64 @@ function M.native_struct_cdecl(desc, addr_size)
   print("};")
 end
 
+--- Collect all Struct descriptors reachable from `desc` in topological order
+-- (dependencies before dependents). Each struct is visited at most once.
+-- @param desc descriptor to walk
+-- @param visited table used to track already-visited struct names
+-- @param order table (array) accumulating structs in declaration order
+local function collect_structs(desc, visited, order)
+  if desc.tag == "Primitive" or desc.tag == "RawAddr" then
+    return
+  elseif desc.tag == "Ref" or desc.tag == "NullableRef" then
+    collect_structs(desc.desc, visited, order)
+  elseif desc.tag == "Array" or desc.tag == "Vector" then
+    collect_structs(desc.desc, visited, order)
+  elseif desc.tag == "CircularList" then
+    collect_structs(desc.desc, visited, order)
+  elseif desc.tag == "Struct" then
+    if visited[desc.name] then
+      return
+    end
+    -- Mark before recursing to handle any forward references gracefully.
+    visited[desc.name] = true
+    -- Recurse into each Field's descriptor first so dependencies come before
+    -- the struct that uses them.
+    for _, item in ipairs(desc.fields) do
+      if item.tag == "Field" then
+        collect_structs(item.desc, visited, order)
+      end
+    end
+    order[#order + 1] = desc
+  else
+    error("collect_structs: unknown descriptor tag: " .. tostring(desc.tag))
+  end
+end
+
+--- Print all Struct declarations reachable from `desc` in correct declaration
+-- order (dependencies before dependents), using the remote C layout.
+-- @param desc descriptor to collect structs from
+-- @param addr_size integer size in bytes of the remote address type
+function M.all_remote_struct_cdecls(desc, addr_size)
+  local visited = {}
+  local order = {}
+  collect_structs(desc, visited, order)
+  for _, s in ipairs(order) do
+    M.remote_struct_cdecl(s, addr_size)
+    print("")
+  end
+end
+
+--- Print all Struct declarations reachable from `desc` in correct declaration
+-- order (dependencies before dependents), using the native C++ layout.
+-- @param desc descriptor to collect structs from
+function M.all_native_struct_cdecls(desc)
+  local visited = {}
+  local order = {}
+  collect_structs(desc, visited, order)
+  for _, s in ipairs(order) do
+    M.native_struct_cdecl(s)
+    print("")
+  end
+end
+
 return M

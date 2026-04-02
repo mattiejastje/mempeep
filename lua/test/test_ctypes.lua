@@ -94,8 +94,6 @@ do
 end
 
 do
-  c.remote_struct_cdecl(Point, 4)
-  c.remote_struct_cdecl(Points, 4)
-  c.native_struct_cdecl(Point)
-  c.native_struct_cdecl(Points)
+  c.all_remote_struct_cdecls(Points, 4)
+  c.all_native_struct_cdecls(Points)
 end
