@@ -198,7 +198,7 @@ struct LogTracer {
 
   template <typename Desc>
   void begin_desc(std::uint64_t address, Desc) {
-    addr_stack.push_back(address);
+    addr_stack.emplace_back(address);
   }
 
   void end_desc() { addr_stack.pop_back(); }
