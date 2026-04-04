@@ -204,11 +204,6 @@ struct LogTracer {
   void end_desc() { addr_stack.pop_back(); }
 };
 
-// CTAD: LogTracer{callback} and LogTracer{callback, level} both work
-// without the caller needing to name the Callback type.
-template <typename Callback>
-LogTracer(Callback, LogLevel = LogLevel::ERRORS) -> LogTracer<Callback>;
-
 // ---------------------------------------------------------------------------
 // Built-in callback helpers
 // ---------------------------------------------------------------------------
