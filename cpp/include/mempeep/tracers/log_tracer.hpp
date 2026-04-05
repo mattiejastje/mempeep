@@ -130,15 +130,15 @@ namespace mempeep {
  * that may appear as a primitive native type, and also const LogEntry<Error>&.
  * The simplest way to satisfy this is a struct with a templated operator().
  *
- * LogTracer is templated on Callback so the call can be inlined by the
+ * LogTracer is templated on OnLogEntry so the call can be inlined by the
  * compiler. Use the OnEntryPrint() helper to
  * obtain a suitable callback for writing to a stream.
  *
- * @tparam Callback Callable type invoked once per log entry.
+ * @tparam OnLogEntry Callable type invoked once per log entry.
  */
-template <typename Callback>
+template <typename OnLogEntry>
 struct LogTracer {
-  Callback on_entry;
+  OnLogEntry on_log_entry;
   LogLevel level = LogLevel::ERRORS;
   bool ok = true;
 
@@ -154,7 +154,7 @@ struct LogTracer {
 
   void error(Error e) {
     ok = false;
-    on_entry(
+    on_log_entry(
       LogEntry<Error>{
         .address = addr_stack.empty() ? 0u : addr_stack.back(),
         .path = path_stack,
@@ -168,7 +168,7 @@ struct LogTracer {
   template <typename T>
   void value(const T& val) {
     if (level >= LogLevel::VALUES) {
-      on_entry(
+      on_log_entry(
         LogEntry<T>{
           .address = addr_stack.empty() ? 0u : addr_stack.back(),
           .path = path_stack,
@@ -214,7 +214,7 @@ struct LogTracer {
  * Templated operator() satisfies the requirement that the callback accept
  * LogEntry<T> for any T.
  */
-struct OnEntryPrint {
+struct OnLogEntryPrint {
   std::ostream& out;
 
   template <typename T>
