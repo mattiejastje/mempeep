@@ -62,7 +62,7 @@ end
 do
   local size, typ = c.remote_ctype(d.Array(Point, 10), 4)
   assert(size == 120)
-  assert(typ == "std::array<Point, 10>")
+  assert(typ == "std::array<Point, 0xa>")
 end
 
 do
@@ -92,19 +92,19 @@ end
 do
   local size, typ = c.remote_ctype(d.PrimitiveArray("i2", {3}), 4)
   assert(size == 6)
-  assert(typ == "std::array<int16_t, 3>")
+  assert(typ == "std::array<int16_t, 0x3>")
 end
 
 do
   local size, typ = c.remote_ctype(d.PrimitiveArray("I1", {2, 3}), 4)
   assert(size == 6)
-  assert(typ == "std::array<std::array<uint8_t, 3>, 2>")
+  assert(typ == "std::array<std::array<uint8_t, 0x3>, 0x2>")
 end
 
 do
   local size, typ = c.remote_ctype(d.PrimitiveArray("i4", {4, 3, 2}), 4)
   assert(size == 96)
-  assert(typ == "std::array<std::array<std::array<int32_t, 2>, 3>, 4>")
+  assert(typ == "std::array<std::array<std::array<int32_t, 0x2>, 0x3>, 0x4>")
 end
 
 do

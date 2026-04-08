@@ -92,7 +92,7 @@ end
 local function nested_array_type(elem_type, dims)
   local t = elem_type
   for i = #dims, 1, -1 do
-    t = string.format("std::array<%s, %d>", t, dims[i])
+    t = string.format("std::array<%s, 0x%x>", t, dims[i])
   end
   return t
 end
