@@ -47,6 +47,18 @@ local fmt_to_ctype = function(fmt)
   return typ
 end
 
+local fmt_to_prim_impl = {}
+fmt_to_prim_impl.i1 = "Int8"
+fmt_to_prim_impl.i2 = "Int16"
+fmt_to_prim_impl.i4 = "Int32"
+fmt_to_prim_impl.i8 = "Int64"
+fmt_to_prim_impl.I1 = "UInt8"
+fmt_to_prim_impl.I2 = "UInt16"
+fmt_to_prim_impl.I4 = "UInt32"
+fmt_to_prim_impl.I8 = "UInt64"
+fmt_to_prim_impl.f = "Float"
+fmt_to_prim_impl.d = "Double"
+
 remote_ctype_impl.Primitive = function(desc, addr_size)
   assert(desc.fmt)
   return string.packsize(desc.fmt), fmt_to_ctype(desc.fmt)
@@ -59,6 +71,8 @@ end
 
 mempeep_ctype_impl.Primitive = function(desc)
   assert(desc.fmt)
+  local prim = fmt_to_prim_impl[desc.fmt]
+  if prim then return "mempeep::" .. prim end
   return "mempeep::Primitive<" .. fmt_to_ctype(desc.fmt) .. ">"
 end
 
