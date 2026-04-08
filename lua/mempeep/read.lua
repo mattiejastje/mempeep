@@ -37,6 +37,8 @@ end
 -- Each entry is a function(desc, address, reader, tracer) -> cursor, value
 --------------------------------------------------------------------------------
 
+local read_value  -- forward declaration
+
 local read_value_impl = {}
 
 --- Primitive: read desc.fmt:packsize() bytes directly and unpack them.
@@ -192,6 +194,8 @@ read_value_impl.CircularList = function(desc, address, reader, tracer)
   return cursor, list
 end
 
+local read_fields_item  -- forward declaration
+
 --- Struct: read fields in order, dispatching each through `read_fields_item`.
 -- Field values are returned by `read_fields_item` and collected into `out` here.
 read_value_impl.Struct = function(desc, address, reader, tracer)
@@ -220,7 +224,7 @@ end
 -- @param reader reader table
 -- @param tracer tracer table
 -- @return cursor after the read and the decoded value
-read_value = function(desc, address, reader, tracer)
+local read_value = function(desc, address, reader, tracer)
   tracer:begin_desc(address, desc)
   local impl = read_value_impl[desc.tag]
   assert(impl, "unknown descriptor tag: " .. tostring(desc.tag))
@@ -265,7 +269,7 @@ end
 -- @param reader reader table { fmt, read }
 -- @param tracer tracer table
 -- @return integer|nil, any cursor after the item and the decoded value (or nil)
-read_fields_item = function(item, base, address, reader, tracer)
+local read_fields_item = function(item, base, address, reader, tracer)
   tracer:begin_fields_item(address, item)
   local impl = read_fields_item_impl[item.tag]
   assert(impl, "unknown fields item tag: " .. tostring(item.tag))

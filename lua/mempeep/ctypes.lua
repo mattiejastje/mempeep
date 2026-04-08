@@ -31,7 +31,7 @@ fmt_to_ctype_impl.f = "float"
 fmt_to_ctype_impl.d = "double"
 
 local fmt_to_ctype = function(fmt)
-  typ = fmt_to_ctype_impl[fmt]
+  local typ = fmt_to_ctype_impl[fmt]
   if typ then return typ end
   local n = fmt:match("^c(%d+)$")
   if n then return "std::array<char, " .. n .. ">" end
@@ -58,7 +58,7 @@ native_ctype_impl.RawAddr = function(desc)
 end
 
 remote_ctype_impl.Ref = function(desc, addr_size)
-  _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
+  local _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
   return addr_size, ref_ctype .. "*"
 end
 
@@ -91,7 +91,7 @@ native_ctype_impl.Vector = function(desc)
 end
 
 remote_ctype_impl.CircularList = function(desc, addr_size)
-  _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
+  local _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
   return addr_size, ref_ctype .. "*"
 end
 
@@ -143,13 +143,13 @@ function M.remote_struct_cdecl(desc, addr_size)
   print("};")
 end
 
-function M.native_struct_cdecl(desc, addr_size)
+function M.native_struct_cdecl(desc)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   print(string.format("struct %s {", desc.name))
   local offset = 0
   for _, item in ipairs(desc.fields) do
     if item.tag == "Field" then
-      local field_ctype = M.native_ctype(item.desc, addr_size)
+      local field_ctype = M.native_ctype(item.desc)
       print(string.format("  %s %s;", field_ctype, item.key))
     end
   end

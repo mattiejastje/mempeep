@@ -107,7 +107,7 @@ function M.new(on_entry, level)
 end
 
 function M.on_entry_print(entry)
-  addr_str = fmt_addr(entry.address)
+  local addr_str = fmt_addr(entry.address)
   if entry.kind == M.log_entry_kind.ERR then
     print(string.format("%s %s <%s>", addr_str, entry.path, entry.text))
   else
@@ -117,7 +117,7 @@ end
 
 function M.make_on_entry_write(out)
   local on_entry = function(entry)
-    addr_str = fmt_addr(entry.address)
+    local addr_str = fmt_addr(entry.address)
     if entry.kind == M.log_entry_kind.ERR then
       out:write(string.format("%s %s <%s>\n", addr_str, entry.path, entry.text))
     else

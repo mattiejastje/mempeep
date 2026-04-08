@@ -2,7 +2,7 @@ local d = require("mempeep.descriptors")
 
 do
   d.assert_string("hello world")
-  local ok, err = pcall(assert_string, 1337)
+  local ok, err = pcall(d.assert_string, 1337)
   assert(not ok)
 end
 
@@ -24,14 +24,14 @@ do
   d.assert_uint_fmt("I2")
   d.assert_uint_fmt("I4")
   d.assert_uint_fmt("I8")
-  local ok, err = pcall(assert_uint_fmt, "i4")
+  local ok, err = pcall(d.assert_uint_fmt, "i4")
   assert(not ok)
 end
 
 do
   d.assert_count(0)
   d.assert_count(0x1000)
-  local ok, err = pcall(assert_count, -1)
+  local ok, err = pcall(d.assert_count, -1)
   assert(not ok)
 end
 

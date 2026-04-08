@@ -1,7 +1,7 @@
-d = require("mempeep.descriptors")
-log_tracer = require("mempeep.tracers.log_tracer")
-memory = require("mempeep.test.memory")
-read = require("mempeep.read")
+local d = require("mempeep.descriptors")
+local log_tracer = require("mempeep.tracers.log_tracer")
+local memory = require("mempeep.test.memory")
+local read = require("mempeep.read")
 
 Int32 = d.Primitive("i4")
 
