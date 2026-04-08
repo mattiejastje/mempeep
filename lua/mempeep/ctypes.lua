@@ -159,42 +159,42 @@ mempeep_ctype_impl.Struct = function(desc)
   return "T" .. desc.name
 end
 
-function M.remote_struct_cdecl(desc, addr_size)
+function M.remote_struct_cdecl(desc, addr_size, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
-  print(string.format("struct %s {", desc.name))
+  out:write(string.format("struct %s {\n", desc.name))
   local offset = 0
   for i, item in ipairs(desc.fields) do
     if item.tag == "Skip" then
-      print(string.format("  int8_t _unknown%d[0x%x];", i, item.n))
+      out:write(string.format("  int8_t _unknown%d[0x%x];\n", i, item.n))
       offset = offset + item.n
     elseif item.tag == "Seek" then
-      print(string.format("  int8_t _unknown%d[0x%x];", i, item.n - offset))
+      out:write(string.format("  int8_t _unknown%d[0x%x];\n", i, item.n - offset))
       offset = item.n
     elseif item.tag == "Field" then
       local field_size, field_ctype = M.remote_ctype(item.desc, addr_size)
       if item.desc.tag == "Vector" then
-        print(string.format("  %s %s_begin;  // offset 0x%x", field_ctype, item.key, offset))
-        print(string.format("  %s %s_end;    // offset 0x%x", field_ctype, item.key, offset + addr_size))
+        out:write(string.format("  %s %s_begin;  // offset 0x%x\n", field_ctype, item.key, offset))
+        out:write(string.format("  %s %s_end;    // offset 0x%x\n", field_ctype, item.key, offset + addr_size))
       else
-        print(string.format("  %s %s;  // offset 0x%x", field_ctype, item.key, offset))
+        out:write(string.format("  %s %s;  // offset 0x%x\n", field_ctype, item.key, offset))
       end
       offset = offset + field_size
     end
   end
-  print("};")
+  out:write("};\n")
 end
 
-function M.native_struct_cdecl(desc)
+function M.native_struct_cdecl(desc, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
-  print(string.format("struct %s {", desc.name))
+  out:write(string.format("struct %s {\n", desc.name))
   local offset = 0
   for _, item in ipairs(desc.fields) do
     if item.tag == "Field" then
       local field_ctype = M.native_ctype(item.desc)
-      print(string.format("  %s %s;", field_ctype, item.key))
+      out:write(string.format("  %s %s;\n", field_ctype, item.key))
     end
   end
-  print("};")
+  out:write("};\n")
 end
 
 function M.mempeep_struct_cdecl(desc, out)
@@ -258,7 +258,7 @@ local function each_struct(desc, fn)
   end
 end
 
---- Print all Struct declarations reachable from `desc` in correct declaration
+--- Write all Struct declarations reachable from `desc` in correct declaration
 -- order (dependencies before dependents), using the remote C layout.
 -- @param desc descriptor to collect structs from
 -- @param addr_size integer size in bytes of the remote address type
@@ -269,7 +269,7 @@ function M.remote_struct_cdecls(desc, addr_size, out)
   end)
 end
 
---- Print all Struct declarations reachable from `desc` in correct declaration
+--- Write all Struct declarations reachable from `desc` in correct declaration
 -- order (dependencies before dependents), using the native C++ layout.
 -- @param desc descriptor to collect structs from
 function M.native_struct_cdecls(desc, out)
@@ -279,7 +279,7 @@ function M.native_struct_cdecls(desc, out)
   end)
 end
 
---- Print all Struct declarations reachable from `desc` in correct declaration
+--- Write all Struct declarations reachable from `desc` in correct declaration
 -- order (dependencies before dependents), using the mempeep C++ layout.
 -- @param desc descriptor to collect structs from
 function M.mempeep_struct_cdecls(desc, out)
