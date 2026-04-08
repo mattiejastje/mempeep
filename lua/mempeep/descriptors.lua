@@ -122,6 +122,17 @@ function M.Primitive(fmt)
   return { tag = "Primitive", fmt = M.assert_fmt(fmt) }
 end
 
+M.Int8 = M.Primitive("i1")
+M.Int16 = M.Primitive("i2")
+M.Int32 = M.Primitive("i4")
+M.Int64 = M.Primitive("i8")
+M.UInt8 = M.Primitive("I1")
+M.UInt16 = M.Primitive("I2")
+M.UInt32 = M.Primitive("I4")
+M.UInt64 = M.Primitive("I8")
+M.Float = M.Primitive("f")
+M.Double = M.Primitive("d")
+
 --- Read an address-sized integer without following it.
 -- @return RawAddr descriptor
 function M.RawAddr()

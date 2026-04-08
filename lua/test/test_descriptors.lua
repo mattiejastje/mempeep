@@ -36,12 +36,14 @@ do
 end
 
 do
-  local Int32 = d.assert_descriptor(d.Primitive("i4"))
+  d.assert_descriptor(d.Primitive("i4"))
+  d.assert_descriptor(d.Int32)
+  d.assert_descriptor(d.UInt32)
   d.assert_descriptor(d.RawAddr())
-  d.assert_descriptor(d.Ref(Int32))
-  d.assert_descriptor(d.NullableRef(Int32))
-  d.assert_descriptor(d.Array(Int32, 10))
-  d.assert_descriptor(d.Vector(Int32, 0x1000))
-  local Node = d.assert_descriptor(d.Struct("Node", { d.Field(Int32, "data"), d.Field(d.RawAddr(), "next") }))
+  d.assert_descriptor(d.Ref(d.Int32))
+  d.assert_descriptor(d.NullableRef(d.Int32))
+  d.assert_descriptor(d.Array(d.Int32, 10))
+  d.assert_descriptor(d.Vector(d.Int32, 0x1000))
+  local Node = d.assert_descriptor(d.Struct("Node", { d.Field(d.Int32, "data"), d.Field(d.RawAddr(), "next") }))
   d.assert_descriptor(d.CircularList(Node, "next", 0x1000))
 end

@@ -3,11 +3,6 @@ local read = require("mempeep.read")
 local memory = require("mempeep.test.memory")
 local ok_tracer = require("mempeep.tracers.ok_tracer")
 
-local Int8 = d.Primitive("i1")
-local Int16 = d.Primitive("i2")
-local Int32 = d.Primitive("i4")
-local Int64 = d.Primitive("i8")
-
 -- ---------------------------------------------------------------------------
 -- Integers
 -- ---------------------------------------------------------------------------
@@ -15,7 +10,7 @@ local Int64 = d.Primitive("i8")
 do
   local reader = memory.mock_memory_reader("I4", "\x44\x33\x22\x11")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Int32, 0, reader, tracer)
+  local v, ok = read.read(d.Int32, 0, reader, tracer)
   assert(ok)
   assert(v == 0x11223344)
 end
@@ -24,7 +19,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\xFF\xFF\x44\x33\x22\x11\xFF\xFF")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Int32, 2, reader, tracer)
+  local v, ok = read.read(d.Int32, 2, reader, tracer)
   assert(ok)
   assert(v == 0x11223344)
 end
@@ -33,7 +28,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\xFF")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Int8, 0, reader, tracer)
+  local v, ok = read.read(d.Int8, 0, reader, tracer)
   assert(ok)
   assert(v == -1)
 end
@@ -42,7 +37,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\xE8\x03")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Int16, 0, reader, tracer)
+  local v, ok = read.read(d.Int16, 0, reader, tracer)
   assert(ok)
   assert(v == 1000)
 end
@@ -51,7 +46,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\x15\xCD\x5B\x07\x00\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Int64, 0, reader, tracer)
+  local v, ok = read.read(d.Int64, 0, reader, tracer)
   assert(ok)
   assert(v == 123456789)
 end
@@ -60,7 +55,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Int32, 0, reader, tracer)
+  local v, ok = read.read(d.Int32, 0, reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
@@ -71,7 +66,7 @@ end
 
 -- Point{x=10, y=20}
 do
-  local Point = d.Struct("Point", { d.Field(Int32, "x"), d.Field(Int32, "y") })
+  local Point = d.Struct("Point", { d.Field(d.Int32, "x"), d.Field(d.Int32, "y") })
   local reader = memory.mock_memory_reader("I4", "\x0A\x00\x00\x00\x14\x00\x00\x00")
   local tracer = ok_tracer.new()
   local v, ok = read.read(Point, 0, reader, tracer)
@@ -83,7 +78,7 @@ end
 
 -- Struct with Skip: a=1 at offset 0, 4 skip bytes, b=2 at offset 8
 do
-  local Skipped = d.Struct("Skipped", { d.Field(Int32, "a"), d.Skip(4), d.Field(Int32, "b") })
+  local Skipped = d.Struct("Skipped", { d.Field(d.Int32, "a"), d.Skip(4), d.Field(d.Int32, "b") })
   local reader = memory.mock_memory_reader("I4", "\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00")
   local tracer = ok_tracer.new()
   local v, ok = read.read(Skipped, 0, reader, tracer)
@@ -95,7 +90,7 @@ end
 
 -- Struct with Seek: a=7 at offset 0, b=99 at offset 8
 do
-  local Sparse = d.Struct("Sparse", { d.Field(Int32, "a"), d.Seek(8), d.Field(Int32, "b") })
+  local Sparse = d.Struct("Sparse", { d.Field(d.Int32, "a"), d.Seek(8), d.Field(d.Int32, "b") })
   local reader = memory.mock_memory_reader("I4", "\x07\x00\x00\x00\x00\x00\x00\x00\x63\x00\x00\x00")
   local tracer = ok_tracer.new()
   local v, ok = read.read(Sparse, 0, reader, tracer)
@@ -113,7 +108,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\x0A\x00\x00\x00\x14\x00\x00\x00\x1E\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Array(Int32, 3), 0, reader, tracer)
+  local v, ok = read.read(d.Array(d.Int32, 3), 0, reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(#v == 3)
@@ -124,7 +119,7 @@ end
 
 -- array of 2 x Point{i16 x, i16 y}: (1,2), (3,4)
 do
-  local Point = d.Struct("Point", { d.Field(Int16, "x"), d.Field(Int16, "y") })
+  local Point = d.Struct("Point", { d.Field(d.Int16, "x"), d.Field(d.Int16, "y") })
   local reader = memory.mock_memory_reader("I4", "\x01\x00\x02\x00\x03\x00\x04\x00")
   local tracer = ok_tracer.new()
   local v, ok = read.read(d.Array(Point, 2), 0, reader, tracer)
@@ -152,7 +147,7 @@ do
       .. "\x2C\x01\x00\x00" -- [2] = 300
   )
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Vector(Int32, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.Vector(d.Int32, 0x1000), 0, reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(#v == 3)
@@ -165,7 +160,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\x08\x00\x00\x00" .. "\x08\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Vector(Int32, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.Vector(d.Int32, 0x1000), 0, reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(#v == 0)
@@ -175,7 +170,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\x10\x00\x00\x00" .. "\x08\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Vector(Int32, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.Vector(d.Int32, 0x1000), 0, reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
@@ -184,7 +179,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Vector(Int32, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.Vector(d.Int32, 0x1000), 0, reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
@@ -197,7 +192,7 @@ end
 -- Each node: value(i32) at +0, next(weak ptr) at +4 => 8 bytes/node
 -- head ptr at offset 0; node A at 4, B at 12, C at 20
 do
-  local Node = d.Struct("Node", { d.Field(Int32, "value"), d.Field(d.RawAddr(), "next") })
+  local Node = d.Struct("Node", { d.Field(d.Int32, "value"), d.Field(d.RawAddr(), "next") })
   local reader = memory.mock_memory_reader(
     "I4",
     "\x04\x00\x00\x00" -- head ptr = 4
@@ -217,7 +212,7 @@ end
 
 -- Empty circular list (head pointer is null)
 do
-  local Node = d.Struct("Node", { d.Field(Int32, "value"), d.Field(d.RawAddr(), "next") })
+  local Node = d.Struct("Node", { d.Field(d.Int32, "value"), d.Field(d.RawAddr(), "next") })
   local reader = memory.mock_memory_reader("I4", "\x00\x00\x00\x00")
   local tracer = ok_tracer.new()
   local v, ok = read.read(d.CircularList(Node, "next", 0x1000), 0, reader, tracer)
@@ -228,7 +223,7 @@ end
 
 -- Unreadable head pointer
 do
-  local Node = d.Struct("Node", { d.Field(Int32, "value"), d.Field(d.RawAddr(), "next") })
+  local Node = d.Struct("Node", { d.Field(d.Int32, "value"), d.Field(d.RawAddr(), "next") })
   local reader = memory.mock_memory_reader("I4", "")
   local tracer = ok_tracer.new()
   local v, ok = read.read(d.CircularList(Node, "next", 0x1000), 0, reader, tracer)
@@ -241,8 +236,8 @@ end
 -- ---------------------------------------------------------------------------
 
 do
-  local Inner = d.Struct("Inner", { d.Field(Int32, "a"), d.Field(Int32, "b") })
-  local Outer = d.Struct("Outer", { d.Field(Inner, "inner"), d.Field(Int32, "c") })
+  local Inner = d.Struct("Inner", { d.Field(d.Int32, "a"), d.Field(d.Int32, "b") })
+  local Outer = d.Struct("Outer", { d.Field(Inner, "inner"), d.Field(d.Int32, "c") })
   local reader = memory.mock_memory_reader(
     "I4",
     "\x0B\x00\x00\x00" -- a = 11

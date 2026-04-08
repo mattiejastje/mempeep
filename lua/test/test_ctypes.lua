@@ -1,22 +1,18 @@
 local d = require("mempeep.descriptors")
 local c = require("mempeep.ctypes")
 
-local Int8 = d.Primitive("i1")
-local Int16 = d.Primitive("i2")
-local Int32 = d.Primitive("i4")
-local Int64 = d.Primitive("i8")
-local Point = d.Struct("Point", { d.Field(Int16, "x"), d.Seek(8), d.Field(Int16, "y"), d.Skip(2) })
-local Node = d.Struct("Node", { d.Field(Int64, "data"), d.Field(d.RawAddr(), "next") })
+local Point = d.Struct("Point", { d.Field(d.Int16, "x"), d.Seek(8), d.Field(d.Int16, "y"), d.Skip(2) })
+local Node = d.Struct("Node", { d.Field(d.Int64, "data"), d.Field(d.RawAddr(), "next") })
 local Points = d.Struct("Points", { d.Field(d.Vector(Point, 0x1000), "points") })
 
 do
-  local size, typ = c.remote_ctype(Int8, 4)
+  local size, typ = c.remote_ctype(d.Int8, 4)
   assert(size == 1)
   assert(typ == "int8_t")
 end
 
 do
-  local size, typ = c.remote_ctype(Int64, 4)
+  local size, typ = c.remote_ctype(d.Int64, 4)
   assert(size == 8)
   assert(typ == "int64_t")
 end

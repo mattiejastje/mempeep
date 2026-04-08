@@ -3,8 +3,6 @@ local log_tracer = require("mempeep.tracers.log_tracer")
 local memory = require("mempeep.test.memory")
 local read = require("mempeep.read")
 
-Int32 = d.Primitive("i4")
-
 local mock_out = function(lines)
   local out = {}
   function out:write(s)
@@ -16,8 +14,8 @@ local mock_out = function(lines)
 end
 
 do
-  local Inner = d.Struct("Inner", { d.Field(Int32, "a"), d.Field(Int32, "b") })
-  local Outer = d.Struct("Outer", { d.Field(Inner, "inner"), d.Field(Int32, "c") })
+  local Inner = d.Struct("Inner", { d.Field(d.Int32, "a"), d.Field(d.Int32, "b") })
+  local Outer = d.Struct("Outer", { d.Field(Inner, "inner"), d.Field(d.Int32, "c") })
   local reader = memory.mock_memory_reader(
     "I4",
     "\x0B\x00\x00\x00" -- a = 11
