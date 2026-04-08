@@ -224,7 +224,7 @@ end
 -- @param reader reader table
 -- @param tracer tracer table
 -- @return cursor after the read and the decoded value
-local read_value = function(desc, address, reader, tracer)
+read_value = function(desc, address, reader, tracer)
   tracer:begin_desc(address, desc)
   local impl = read_value_impl[desc.tag]
   assert(impl, "unknown descriptor tag: " .. tostring(desc.tag))
@@ -269,7 +269,7 @@ end
 -- @param reader reader table { fmt, read }
 -- @param tracer tracer table
 -- @return integer|nil, any cursor after the item and the decoded value (or nil)
-local read_fields_item = function(item, base, address, reader, tracer)
+read_fields_item = function(item, base, address, reader, tracer)
   tracer:begin_fields_item(address, item)
   local impl = read_fields_item_impl[item.tag]
   assert(impl, "unknown fields item tag: " .. tostring(item.tag))
