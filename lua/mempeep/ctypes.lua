@@ -20,10 +20,10 @@ end
 
 local mempeep_ctype_impl = {}
 
-function M.mempeep_ctype(desc)
+function M.mempeep_ctype(desc, namespace)
   local impl = mempeep_ctype_impl[desc.tag]
   assert(impl, "unknown descriptor tag: " .. tostring(desc.tag))
-  return impl(desc)
+  return impl(desc, namespace)
 end
 
 local fmt_to_ctype_impl = {}
@@ -69,11 +69,11 @@ native_ctype_impl.Primitive = function(desc)
   return fmt_to_ctype(desc.fmt)
 end
 
-mempeep_ctype_impl.Primitive = function(desc)
+mempeep_ctype_impl.Primitive = function(desc, namespace)
   assert(desc.fmt)
   local prim = fmt_to_prim_impl[desc.fmt]
-  if prim then return "mempeep::" .. prim end
-  return "mempeep::Primitive<" .. fmt_to_ctype(desc.fmt) .. ">"
+  if prim then return namespace .. prim end
+  return namespace .. "Primitive<" .. fmt_to_ctype(desc.fmt) .. ">"
 end
 
 remote_ctype_impl.Bounded = function(desc, addr_size)
@@ -84,9 +84,9 @@ native_ctype_impl.Bounded = function(desc)
   return M.native_ctype(desc.desc)
 end
 
-mempeep_ctype_impl.Bounded = function(desc)
-  local inner = M.mempeep_ctype(desc.desc)
-  return string.format("mempeep::Bounded<%s, %d, %d>", inner, desc.min, desc.max)
+mempeep_ctype_impl.Bounded = function(desc, namespace)
+  local inner = M.mempeep_ctype(desc.desc, namespace)
+  return string.format("%sBounded<%s, %d, %d>", namespace, inner, desc.min, desc.max)
 end
 
 remote_ctype_impl.RawAddr = function(desc, addr_size)
@@ -97,8 +97,8 @@ native_ctype_impl.RawAddr = function(desc)
   return "uintptr_t"
 end
 
-mempeep_ctype_impl.RawAddr = function(desc)
-  return "mempeep::RawAddr<uintptr_t>"
+mempeep_ctype_impl.RawAddr = function(desc, namespace)
+  return namespace .. "RawAddr<uintptr_t>"
 end
 
 remote_ctype_impl.Ref = function(desc, addr_size)
@@ -110,8 +110,8 @@ native_ctype_impl.Ref = function(desc)
   return M.native_ctype(desc.desc)
 end
 
-mempeep_ctype_impl.Ref = function(desc)
-  return "mempeep::Ref<" .. M.mempeep_ctype(desc.desc) .. ">"
+mempeep_ctype_impl.Ref = function(desc, namespace)
+  return namespace .. "Ref<" .. M.mempeep_ctype(desc.desc, namespace) .. ">"
 end
 
 remote_ctype_impl.NullableRef = remote_ctype_impl.Ref
@@ -120,8 +120,8 @@ native_ctype_impl.NullableRef = function(desc)
   return "std::optional<" .. M.native_ctype(desc.desc) .. ">"
 end
 
-mempeep_ctype_impl.NullableRef = function(desc)
-  return "mempeep::NullableRef<" .. M.mempeep_ctype(desc.desc) .. ">"
+mempeep_ctype_impl.NullableRef = function(desc, namespace)
+  return namespace .. "NullableRef<" .. M.mempeep_ctype(desc.desc, namespace) .. ">"
 end
 
 remote_ctype_impl.Array = function(desc, addr_size)
@@ -133,8 +133,8 @@ native_ctype_impl.Array = function(desc)
   return "std::array<" .. M.native_ctype(desc.desc) .. ", " .. desc.n .. ">"
 end
 
-mempeep_ctype_impl.Array = function(desc)
-  return "mempeep::Array<" .. M.mempeep_ctype(desc.desc) .. ", " .. desc.n .. ">"
+mempeep_ctype_impl.Array = function(desc, namespace)
+  return namespace .. "Array<" .. M.mempeep_ctype(desc.desc, namespace) .. ", " .. desc.n .. ">"
 end
 
 remote_ctype_impl.Vector = function(desc, addr_size)
@@ -146,8 +146,8 @@ native_ctype_impl.Vector = function(desc)
   return "std::vector<" .. M.native_ctype(desc.desc) .. ">"
 end
 
-mempeep_ctype_impl.Vector = function(desc)
-  return "mempeep::Vector<" .. M.mempeep_ctype(desc.desc) .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
+mempeep_ctype_impl.Vector = function(desc, namespace)
+  return namespace .. "Vector<" .. M.mempeep_ctype(desc.desc, namespace) .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
 end
 
 remote_ctype_impl.CircularList = function(desc, addr_size)
@@ -159,8 +159,8 @@ native_ctype_impl.CircularList = function(desc)
   return "std::vector<" .. M.native_ctype(desc.desc) .. ">"
 end
 
-mempeep_ctype_impl.CircularList = function(desc)
-  return "mempeep::CircularList<" .. M.mempeep_ctype(desc.desc) .. ", &" .. desc.desc.name .. "::" .. desc.next_key .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
+mempeep_ctype_impl.CircularList = function(desc, namespace)
+  return namespace .. "CircularList<" .. M.mempeep_ctype(desc.desc, namespace) .. ", &" .. desc.desc.name .. "::" .. desc.next_key .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
 end
 
 remote_ctype_impl.Struct = function(desc, addr_size)
@@ -182,7 +182,7 @@ native_ctype_impl.Struct = function(desc)
   return desc.name
 end
 
-mempeep_ctype_impl.Struct = function(desc)
+mempeep_ctype_impl.Struct = function(desc, namespace)
   return "T" .. desc.name
 end
 
@@ -224,28 +224,28 @@ local native_struct_cdecl_1 = function(desc, out)
   out:write("};\n\n")
 end
 
-local native_struct_cdecl_2 = function(desc, out)
+local native_struct_cdecl_2 = function(desc, namespace, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
-  out:write("using T" .. desc.name .. " = mempeep::Struct<\n")
+  out:write("using T" .. desc.name .. " = " .. namespace .. "Struct<\n")
   out:write("  " .. desc.name .. ",\n")
-  out:write("  mempeep::Fields<\n")
+  out:write("  " .. namespace .. "Fields<\n")
   for i, item in ipairs(desc.fields) do
     local is_last = (i == #desc.fields)
     local comma = is_last and ">>;\n\n" or ",\n"
     if item.tag == "Skip" then
-      out:write(string.format("    mempeep::Skip<0x%x>%s", item.n, comma))
+      out:write(string.format("    %sSkip<0x%x>%s", namespace, item.n, comma))
     elseif item.tag == "Seek" then
-      out:write(string.format("    mempeep::Seek<0x%x>%s", item.n, comma))
+      out:write(string.format("    %sSeek<0x%x>%s", namespace, item.n, comma))
     elseif item.tag == "Field" then
-      local mtype = M.mempeep_ctype(item.desc)
-      out:write(string.format("    mempeep::Field<%s, &%s::%s>%s", mtype, desc.name, item.key, comma))
+      local mtype = M.mempeep_ctype(item.desc, namespace)
+      out:write(string.format("    %sField<%s, &%s::%s>%s", namespace, mtype, desc.name, item.key, comma))
     end
   end
 end
 
-function M.native_struct_cdecl(desc, out)
+function M.native_struct_cdecl(desc, namespace, out)
   native_struct_cdecl_1(desc, out)
-  native_struct_cdecl_2(desc, out)
+  native_struct_cdecl_2(desc, namespace, out)
 end
 
 --- Collect all Struct descriptors reachable from `desc` in topological order
@@ -305,9 +305,9 @@ end
 -- order (dependencies before dependents), using the native C++ layout.
 -- @param desc descriptor to collect structs from
 -- @param out output stream
-function M.native_struct_cdecls(desc, out)
+function M.native_struct_cdecls(desc, namespace, out)
   each_struct(desc, function(s)
-    M.native_struct_cdecl(s, out)
+    M.native_struct_cdecl(s, namespace, out)
   end)
 end
 
