@@ -89,6 +89,36 @@ mempeep_ctype_impl.Bounded = function(desc, namespace)
   return string.format("%sBounded<%s, %d, %d>", namespace, inner, desc.min, desc.max)
 end
 
+local function nested_array_type(elem_type, dims)
+  local t = elem_type
+  for i = #dims, 1, -1 do
+    t = string.format("std::array<%s, %d>", t, dims[i])
+  end
+  return t
+end
+
+local function primitive_array_count(dims)
+  local n = 1
+  for _, d in ipairs(dims) do n = n * d end
+  return n
+end
+
+remote_ctype_impl.PrimitiveArray = function(desc, addr_size)
+  local elem_size = string.packsize(desc.fmt)
+  local elem_type = fmt_to_ctype(desc.fmt)
+  return elem_size * primitive_array_count(desc.dims),
+         nested_array_type(elem_type, desc.dims)
+end
+
+native_ctype_impl.PrimitiveArray = function(desc)
+  return nested_array_type(fmt_to_ctype(desc.fmt), desc.dims)
+end
+
+mempeep_ctype_impl.PrimitiveArray = function(desc, namespace)
+  return string.format("%sPrimitive<%s>", namespace,
+         nested_array_type(fmt_to_ctype(desc.fmt), desc.dims))
+end
+
 remote_ctype_impl.RawAddr = function(desc, addr_size)
   return addr_size, "void*"
 end
@@ -254,7 +284,7 @@ end
 -- @param visited table used to track already-visited struct names
 -- @param order table (array) accumulating structs in declaration order
 local function collect_structs(desc, visited, order)
-  if desc.tag == "Primitive" or desc.tag == "RawAddr" then
+  if desc.tag == "Primitive" or desc.tag == "PrimitiveArray" or desc.tag == "RawAddr" then
     return
   elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "CircularList" or desc.tag == "Bounded" then
     collect_structs(desc.desc, visited, order)

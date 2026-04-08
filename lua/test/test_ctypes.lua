@@ -90,6 +90,24 @@ do
 end
 
 do
+  local size, typ = c.remote_ctype(d.PrimitiveArray("i2", {3}), 4)
+  assert(size == 6)
+  assert(typ == "std::array<int16_t, 3>")
+end
+
+do
+  local size, typ = c.remote_ctype(d.PrimitiveArray("I1", {2, 3}), 4)
+  assert(size == 6)
+  assert(typ == "std::array<std::array<uint8_t, 3>, 2>")
+end
+
+do
+  local size, typ = c.remote_ctype(d.PrimitiveArray("i4", {4, 3, 2}), 4)
+  assert(size == 96)
+  assert(typ == "std::array<std::array<std::array<int32_t, 2>, 3>, 4>")
+end
+
+do
   c.remote_struct_cdecls(Points, 4, io.stdout)
-  c.native_struct_cdecls(Points, "mempeep::", io.stdout)
+  c.native_struct_cdecls(Points, "", io.stdout)
 end

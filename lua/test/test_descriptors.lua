@@ -47,3 +47,13 @@ do
   local Node = d.assert_descriptor(d.Struct("Node", { d.Field(d.Int32, "data"), d.Field(d.RawAddr(), "next") }))
   d.assert_descriptor(d.CircularList(Node, "next", 0x1000))
 end
+
+do
+  d.assert_descriptor(d.PrimitiveArray("i2", {3}))
+  d.assert_descriptor(d.PrimitiveArray("i2", {3, 4}))
+  d.assert_descriptor(d.PrimitiveArray("I1", {8, 4, 2}))
+  local ok, err = pcall(d.PrimitiveArray, "i2", {})
+  assert(not ok)
+  local ok2, err2 = pcall(d.PrimitiveArray, "i2", {0, 3})
+  assert(not ok2)
+end
