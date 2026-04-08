@@ -126,15 +126,15 @@ end
 
 remote_ctype_impl.Array = function(desc, addr_size)
   local ref_size, ref_ctype = M.remote_ctype(desc.desc, addr_size)
-  return desc.n * ref_size, "std::array<" .. ref_ctype .. ", " .. desc.n .. ">"
+  return desc.n * ref_size, "std::array<" .. ref_ctype .. ", 0x" .. string.format("%x", desc.n) .. ">"
 end
 
 native_ctype_impl.Array = function(desc)
-  return "std::array<" .. M.native_ctype(desc.desc) .. ", " .. desc.n .. ">"
+  return "std::array<" .. M.native_ctype(desc.desc) .. ", 0x" .. string.format("%x", desc.n) .. ">"
 end
 
 mempeep_ctype_impl.Array = function(desc, namespace)
-  return namespace .. "Array<" .. M.mempeep_ctype(desc.desc, namespace) .. ", " .. desc.n .. ">"
+  return namespace .. "Array<" .. M.mempeep_ctype(desc.desc, namespace) .. ", 0x" .. string.format("%x", desc.n) .. ">"
 end
 
 remote_ctype_impl.Vector = function(desc, addr_size)
