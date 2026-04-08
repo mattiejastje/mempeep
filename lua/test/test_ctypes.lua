@@ -96,5 +96,4 @@ end
 do
   c.remote_struct_cdecls(Points, 4, io.stdout)
   c.native_struct_cdecls(Points, io.stdout)
-  c.mempeep_struct_cdecls(Points, io.stdout)
 end
