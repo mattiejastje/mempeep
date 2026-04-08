@@ -13,6 +13,7 @@ local descriptor_tags = {
   Vector = true,
   CircularList = true,
   Struct = true,
+  Bounded = true,
 }
 
 -- Valid fields item tags.
@@ -191,6 +192,20 @@ end
 -- @return Struct descriptor
 function M.Struct(name, fields)
   return { tag = "Struct", name = name, fields = M.assert_fields(fields) }
+end
+
+--- Read a descriptor and note an error if the value is out of bounds.
+-- The native type must support comparison.
+-- @param desc the descriptor to read
+-- @param min the minimum allowed value (inclusive)
+-- @param max the maximum allowed value (inclusive)
+-- @return Bounded descriptor
+function M.Bounded(desc, min, max)
+  M.assert_descriptor(desc)
+  assert(type(min) == "number", "expected a number for min")
+  assert(type(max) == "number", "expected a number for max")
+  assert(min <= max, "min must be less or equal to max")
+  return { tag = "Bounded", desc = desc, min = min, max = max }
 end
 
 --------------------------------------------------------------------------------

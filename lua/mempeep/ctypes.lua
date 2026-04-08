@@ -62,6 +62,19 @@ mempeep_ctype_impl.Primitive = function(desc)
   return "mempeep::Primitive<" .. fmt_to_ctype(desc.fmt) .. ">"
 end
 
+remote_ctype_impl.Bounded = function(desc, addr_size)
+  return M.remote_ctype(desc.desc, addr_size)
+end
+
+native_ctype_impl.Bounded = function(desc)
+  return M.native_ctype(desc.desc)
+end
+
+mempeep_ctype_impl.Bounded = function(desc)
+  local inner = M.mempeep_ctype(desc.desc)
+  return string.format("mempeep::Bounded<%s, %d, %d>", inner, desc.min, desc.max)
+end
+
 remote_ctype_impl.RawAddr = function(desc, addr_size)
   return addr_size, "void*"
 end
@@ -229,7 +242,7 @@ end
 local function collect_structs(desc, visited, order)
   if desc.tag == "Primitive" or desc.tag == "RawAddr" then
     return
-  elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "CircularList" then
+  elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "CircularList" or desc.tag == "Bounded" then
     collect_structs(desc.desc, visited, order)
   elseif desc.tag == "Struct" then
     if visited[desc.name] then

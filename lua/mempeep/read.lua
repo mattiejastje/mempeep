@@ -54,6 +54,16 @@ read_value_impl.Primitive = function(desc, address, reader, tracer)
   return advance(address, size, reader, tracer), value
 end
 
+read_value_impl.Bounded = function(desc, address, reader, tracer)
+  local cursor, value = read_value(desc.desc, address, reader, tracer)
+  if cursor then
+    if value < desc.min or value > desc.max then
+      tracer:error(errors.PRIMITIVE_OUT_OF_BOUNDS)
+    end
+  end
+  return cursor, value
+end
+
 --- RawAddr: read one address-sized integer without following it.
 -- Reads via Primitive using the reader's own address format.
 read_value_impl.RawAddr = function(desc, address, reader, tracer)
