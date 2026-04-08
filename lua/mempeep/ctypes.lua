@@ -206,12 +206,12 @@ function M.mempeep_struct_cdecl(desc, out)
     local is_last = (i == #desc.fields)
     local comma = is_last and ">>;\n" or ",\n"
     if item.tag == "Skip" then
-      out:write("    mempeep::Skip<" .. item.n .. ">" .. comma)
+      out:write(string.format("    mempeep::Skip<0x%x>%s", item.n, comma))
     elseif item.tag == "Seek" then
-      out:write("    mempeep::Seek<" .. item.n .. ">" .. comma)
+      out:write(string.format("    mempeep::Seek<0x%x>%s", item.n, comma))
     elseif item.tag == "Field" then
       local mtype = M.mempeep_ctype(item.desc)
-      out:write("    mempeep::Field<" .. mtype .. ", &" .. desc.name .. "::" .. item.key .. ">" .. comma)
+      out:write(string.format("    mempeep::Field<%s, &%s::%s>%s", mtype, desc.name, item.key, comma))
     end
   end
 end
