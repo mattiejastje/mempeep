@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lua",
+            "request": "launch",
+            "name": "Debug",
+            "program": "test.lua",
+            "cwd": "${workspaceFolder}/lua",
+            "path": "${workspaceFolder}/lua/?.lua"
+        }
+    ]
+}
