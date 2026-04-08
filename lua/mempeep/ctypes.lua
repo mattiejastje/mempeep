@@ -262,6 +262,7 @@ end
 -- order (dependencies before dependents), using the remote C layout.
 -- @param desc descriptor to collect structs from
 -- @param addr_size integer size in bytes of the remote address type
+-- @param out output stream
 function M.remote_struct_cdecls(desc, addr_size, out)
   each_struct(desc, function(s)
     M.remote_struct_cdecl(s, addr_size, out)
@@ -272,6 +273,7 @@ end
 --- Write all Struct declarations reachable from `desc` in correct declaration
 -- order (dependencies before dependents), using the native C++ layout.
 -- @param desc descriptor to collect structs from
+-- @param out output stream
 function M.native_struct_cdecls(desc, out)
   each_struct(desc, function(s)
     M.native_struct_cdecl(s, out)
@@ -280,8 +282,9 @@ function M.native_struct_cdecls(desc, out)
 end
 
 --- Write all Struct declarations reachable from `desc` in correct declaration
--- order (dependencies before dependents), using the mempeep C++ layout.
+-- order (dependencies before dependents), using mempeep C++ descriptors.
 -- @param desc descriptor to collect structs from
+-- @param out output stream
 function M.mempeep_struct_cdecls(desc, out)
   each_struct(desc, function(s)
     M.mempeep_struct_cdecl(s, out)
