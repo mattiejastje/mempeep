@@ -181,10 +181,10 @@ function M.remote_struct_cdecl(desc, addr_size, out)
       offset = offset + field_size
     end
   end
-  out:write("};\n")
+  out:write("};\n\n")
 end
 
-function M.native_struct_cdecl(desc, out)
+local native_struct_cdecl_1 = function(desc, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   out:write(string.format("struct %s {\n", desc.name))
   local offset = 0
@@ -194,17 +194,17 @@ function M.native_struct_cdecl(desc, out)
       out:write(string.format("  %s %s;\n", field_ctype, item.key))
     end
   end
-  out:write("};\n")
+  out:write("};\n\n")
 end
 
-function M.mempeep_struct_cdecl(desc, out)
+local native_struct_cdecl_2 = function(desc, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   out:write("using T" .. desc.name .. " = mempeep::Struct<\n")
   out:write("  " .. desc.name .. ",\n")
   out:write("  mempeep::Fields<\n")
   for i, item in ipairs(desc.fields) do
     local is_last = (i == #desc.fields)
-    local comma = is_last and ">>;\n" or ",\n"
+    local comma = is_last and ">>;\n\n" or ",\n"
     if item.tag == "Skip" then
       out:write(string.format("    mempeep::Skip<0x%x>%s", item.n, comma))
     elseif item.tag == "Seek" then
@@ -214,6 +214,11 @@ function M.mempeep_struct_cdecl(desc, out)
       out:write(string.format("    mempeep::Field<%s, &%s::%s>%s", mtype, desc.name, item.key, comma))
     end
   end
+end
+
+function M.native_struct_cdecl(desc, out)
+  native_struct_cdecl_1(desc, out)
+  native_struct_cdecl_2(desc, out)
 end
 
 --- Collect all Struct descriptors reachable from `desc` in topological order
@@ -266,7 +271,6 @@ end
 function M.remote_struct_cdecls(desc, addr_size, out)
   each_struct(desc, function(s)
     M.remote_struct_cdecl(s, addr_size, out)
-    out:write("\n")
   end)
 end
 
@@ -277,18 +281,6 @@ end
 function M.native_struct_cdecls(desc, out)
   each_struct(desc, function(s)
     M.native_struct_cdecl(s, out)
-    out:write("\n")
-  end)
-end
-
---- Write all Struct declarations reachable from `desc` in correct declaration
--- order (dependencies before dependents), using mempeep C++ descriptors.
--- @param desc descriptor to collect structs from
--- @param out output stream
-function M.mempeep_struct_cdecls(desc, out)
-  each_struct(desc, function(s)
-    M.mempeep_struct_cdecl(s, out)
-    out:write("\n")
   end)
 end
 
