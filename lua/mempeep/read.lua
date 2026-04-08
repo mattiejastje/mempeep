@@ -64,6 +64,22 @@ read_value_impl.Bounded = function(desc, address, reader, tracer)
   return cursor, value
 end
 
+--- ZString: read desc.max_len bytes, truncate at the first null byte.
+read_value_impl.ZString = function(desc, address, reader, tracer)
+  local bytes = reader:read(address, desc.max_len)
+  if not bytes then
+    tracer:error(errors.READ_FAILED)
+    return nil, nil
+  end
+  local null_pos = bytes:find("\0", 1, true)
+  if null_pos == nil then
+    tracer:error(errors.ZSTRING_TOO_LONG)
+  end
+  local value = null_pos and bytes:sub(1, null_pos - 1) or bytes
+  tracer:value(value)
+  return advance(address, desc.max_len, reader, tracer), value
+end
+
 -- slow implementation (lua not meant for real time anyway)
 read_value_impl.PrimitiveArray = function(desc, address, reader, tracer)
   local array_desc = { tag = "Primitive", fmt = desc.fmt }

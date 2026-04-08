@@ -15,6 +15,7 @@ local descriptor_tags = {
   CircularList = true,
   Struct = true,
   Bounded = true,
+  ZString = true,
 }
 
 -- Valid fields item tags.
@@ -235,6 +236,13 @@ function M.Bounded(desc, min, max)
   assert(type(max) == "number", "expected a number for max")
   assert(min <= max, "min must be less or equal to max")
   return { tag = "Bounded", desc = desc, min = min, max = max }
+end
+
+--- Read max_len bytes and turn into a string, terminating at null.
+-- @param max_len number of bytes to read
+-- @return ZString descriptor
+function M.ZString(max_len)
+  return { tag = "ZString", max_len = M.assert_count(max_len) }
 end
 
 --------------------------------------------------------------------------------

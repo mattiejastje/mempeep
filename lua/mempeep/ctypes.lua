@@ -89,6 +89,18 @@ mempeep_ctype_impl.Bounded = function(desc, namespace)
   return string.format("%sBounded<%s, %d, %d>", namespace, inner, desc.min, desc.max)
 end
 
+remote_ctype_impl.ZString = function(desc, addr_size)
+  return desc.max_len, "std::array<char, 0x" .. string.format("%x", desc.max_len) .. ">"
+end
+
+native_ctype_impl.ZString = function(desc)
+  return "std::string"
+end
+
+mempeep_ctype_impl.ZString = function(desc, namespace)
+  return namespace .. "ZString<0x" .. string.format("%x", desc.max_len) .. ">"
+end
+
 local function nested_array_type(elem_type, dims)
   local t = elem_type
   for i = #dims, 1, -1 do
@@ -284,7 +296,7 @@ end
 -- @param visited table used to track already-visited struct names
 -- @param order table (array) accumulating structs in declaration order
 local function collect_structs(desc, visited, order)
-  if desc.tag == "Primitive" or desc.tag == "PrimitiveArray" or desc.tag == "RawAddr" then
+  if desc.tag == "Primitive" or desc.tag == "PrimitiveArray" or desc.tag == "RawAddr" or desc.tag == "ZString" then
     return
   elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "CircularList" or desc.tag == "Bounded" then
     collect_structs(desc.desc, visited, order)

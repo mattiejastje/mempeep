@@ -46,6 +46,8 @@ do
   d.assert_descriptor(d.Vector(d.Int32, 0x1000))
   local Node = d.assert_descriptor(d.Struct("Node", { d.Field(d.Int32, "data"), d.Field(d.RawAddr(), "next") }))
   d.assert_descriptor(d.CircularList(Node, "next", 0x1000))
+  d.assert_descriptor(d.Bounded(d.Int32, -10, 10))
+  d.assert_descriptor(d.ZString(0x100))
 end
 
 do
