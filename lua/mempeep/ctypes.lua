@@ -18,6 +18,14 @@ function M.native_ctype(desc)
   return impl(desc)
 end
 
+local mempeep_ctype_impl = {}
+
+function M.mempeep_ctype(desc)
+  local impl = mempeep_ctype_impl[desc.tag]
+  assert(impl, "unknown descriptor tag: " .. tostring(desc.tag))
+  return impl(desc)
+end
+
 local fmt_to_ctype_impl = {}
 fmt_to_ctype_impl.i1 = "int8_t"
 fmt_to_ctype_impl.i2 = "int16_t"
@@ -49,12 +57,21 @@ native_ctype_impl.Primitive = function(desc)
   return fmt_to_ctype(desc.fmt)
 end
 
+mempeep_ctype_impl.Primitive = function(desc)
+  assert(desc.fmt)
+  return "mempeep::Primitive<" .. fmt_to_ctype(desc.fmt) .. ">"
+end
+
 remote_ctype_impl.RawAddr = function(desc, addr_size)
   return addr_size, "void*"
 end
 
 native_ctype_impl.RawAddr = function(desc)
   return "uintptr_t"
+end
+
+mempeep_ctype_impl.RawAddr = function(desc)
+  return "mempeep::RawAddr<uintptr_t>"
 end
 
 remote_ctype_impl.Ref = function(desc, addr_size)
@@ -66,10 +83,18 @@ native_ctype_impl.Ref = function(desc)
   return M.native_ctype(desc.desc)
 end
 
+mempeep_ctype_impl.Ref = function(desc)
+  return "mempeep::Ref<" .. M.mempeep_ctype(desc.desc) .. ">"
+end
+
 remote_ctype_impl.NullableRef = remote_ctype_impl.Ref
 
 native_ctype_impl.NullableRef = function(desc)
   return "std::optional<" .. M.native_ctype(desc.desc) .. ">"
+end
+
+mempeep_ctype_impl.NullableRef = function(desc)
+  return "mempeep::NullableRef<" .. M.mempeep_ctype(desc.desc) .. ">"
 end
 
 remote_ctype_impl.Array = function(desc, addr_size)
@@ -81,6 +106,10 @@ native_ctype_impl.Array = function(desc)
   return "std::array<" .. M.native_ctype(desc.desc) .. ", " .. desc.n .. ">"
 end
 
+mempeep_ctype_impl.Array = function(desc)
+  return "mempeep::Array<" .. M.mempeep_ctype(desc.desc) .. ", " .. desc.n .. ">"
+end
+
 remote_ctype_impl.Vector = function(desc, addr_size)
   local _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
   return 2 * addr_size, ref_ctype .. "*"
@@ -90,6 +119,10 @@ native_ctype_impl.Vector = function(desc)
   return "std::vector<" .. M.native_ctype(desc.desc) .. ">"
 end
 
+mempeep_ctype_impl.Vector = function(desc)
+  return "mempeep::Vector<" .. M.mempeep_ctype(desc.desc) .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
+end
+
 remote_ctype_impl.CircularList = function(desc, addr_size)
   local _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
   return addr_size, ref_ctype .. "*"
@@ -97,6 +130,10 @@ end
 
 native_ctype_impl.CircularList = function(desc)
   return "std::vector<" .. M.native_ctype(desc.desc) .. ">"
+end
+
+mempeep_ctype_impl.CircularList = function(desc)
+  return "mempeep::CircularList<" .. M.mempeep_ctype(desc.desc) .. ", &" .. desc.desc.name .. "::" .. desc.next_key .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
 end
 
 remote_ctype_impl.Struct = function(desc, addr_size)
@@ -116,6 +153,10 @@ end
 
 native_ctype_impl.Struct = function(desc)
   return desc.name
+end
+
+mempeep_ctype_impl.Struct = function(desc)
+  return "T" .. desc.name
 end
 
 function M.remote_struct_cdecl(desc, addr_size)
@@ -156,6 +197,25 @@ function M.native_struct_cdecl(desc)
   print("};")
 end
 
+function M.mempeep_struct_cdecl(desc, out)
+  assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
+  out:write("using T" .. desc.name .. " = mempeep::Struct<\n")
+  out:write("  " .. desc.name .. ",\n")
+  out:write("  mempeep::Fields<\n")
+  for i, item in ipairs(desc.fields) do
+    local is_last = (i == #desc.fields)
+    local comma = is_last and ">>;\n" or ",\n"
+    if item.tag == "Skip" then
+      out:write("    mempeep::Skip<" .. item.n .. ">" .. comma)
+    elseif item.tag == "Seek" then
+      out:write("    mempeep::Seek<" .. item.n .. ">" .. comma)
+    elseif item.tag == "Field" then
+      local mtype = M.mempeep_ctype(item.desc)
+      out:write("    mempeep::Field<" .. mtype .. ", &" .. desc.name .. "::" .. item.key .. ">" .. comma)
+    end
+  end
+end
+
 --- Collect all Struct descriptors reachable from `desc` in topological order
 -- (dependencies before dependents). Each struct is visited at most once.
 -- @param desc descriptor to walk
@@ -164,11 +224,7 @@ end
 local function collect_structs(desc, visited, order)
   if desc.tag == "Primitive" or desc.tag == "RawAddr" then
     return
-  elseif desc.tag == "Ref" or desc.tag == "NullableRef" then
-    collect_structs(desc.desc, visited, order)
-  elseif desc.tag == "Array" or desc.tag == "Vector" then
-    collect_structs(desc.desc, visited, order)
-  elseif desc.tag == "CircularList" then
+  elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "CircularList" then
     collect_structs(desc.desc, visited, order)
   elseif desc.tag == "Struct" then
     if visited[desc.name] then
@@ -189,31 +245,48 @@ local function collect_structs(desc, visited, order)
   end
 end
 
---- Print all Struct declarations reachable from `desc` in correct declaration
--- order (dependencies before dependents), using the remote C layout.
--- @param desc descriptor to collect structs from
--- @param addr_size integer size in bytes of the remote address type
-function M.all_remote_struct_cdecls(desc, addr_size)
+--- Apply `fn` to all Struct descriptors reachable from `desc` in topological
+-- order (dependencies before dependents).
+-- @param desc descriptor to walk
+-- @param fn function(desc) called once per unique reachable Struct
+local function each_struct(desc, fn)
   local visited = {}
   local order = {}
   collect_structs(desc, visited, order)
   for _, s in ipairs(order) do
-    M.remote_struct_cdecl(s, addr_size)
-    print("")
+    fn(s)
   end
+end
+
+--- Print all Struct declarations reachable from `desc` in correct declaration
+-- order (dependencies before dependents), using the remote C layout.
+-- @param desc descriptor to collect structs from
+-- @param addr_size integer size in bytes of the remote address type
+function M.remote_struct_cdecls(desc, addr_size, out)
+  each_struct(desc, function(s)
+    M.remote_struct_cdecl(s, addr_size, out)
+    out:write("\n")
+  end)
 end
 
 --- Print all Struct declarations reachable from `desc` in correct declaration
 -- order (dependencies before dependents), using the native C++ layout.
 -- @param desc descriptor to collect structs from
-function M.all_native_struct_cdecls(desc)
-  local visited = {}
-  local order = {}
-  collect_structs(desc, visited, order)
-  for _, s in ipairs(order) do
-    M.native_struct_cdecl(s)
-    print("")
-  end
+function M.native_struct_cdecls(desc, out)
+  each_struct(desc, function(s)
+    M.native_struct_cdecl(s, out)
+    out:write("\n")
+  end)
+end
+
+--- Print all Struct declarations reachable from `desc` in correct declaration
+-- order (dependencies before dependents), using the mempeep C++ layout.
+-- @param desc descriptor to collect structs from
+function M.mempeep_struct_cdecls(desc, out)
+  each_struct(desc, function(s)
+    M.mempeep_struct_cdecl(s, out)
+    out:write("\n")
+  end)
 end
 
 return M
