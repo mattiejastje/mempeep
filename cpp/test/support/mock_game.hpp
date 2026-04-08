@@ -5,15 +5,13 @@
 
 namespace mempeep::test {
 
-using TUInt8 = Primitive<uint8_t>;
-
 struct Pos {
   uint8_t x, y;
 };
 
 // intentionally have skipping bytes at end, for testing
 using TPos
-  = Struct<Pos, Fields<Field<TUInt8, &Pos::x>, Field<TUInt8, &Pos::y>, Skip<2>>>;
+  = Struct<Pos, Fields<Field<UInt8, &Pos::x>, Field<UInt8, &Pos::y>, Skip<2>>>;
 
 struct Cave {
   uint8_t id;
@@ -38,7 +36,7 @@ using TPlayer = Struct<
   Player,
   Fields<
     Skip<2>,
-    Field<TUInt8, &Player::health>,
+    Field<UInt8, &Player::health>,
     Skip<1>,
     Field<TPos, &Player::pos>,
     Field<RawAddr<uint8_t>, &Player::target_ptr>,
@@ -47,7 +45,7 @@ using TPlayer = Struct<
     Field<Ref<TPos>, &Player::prev_pos>,
     Field<NullableRef<TPos>, &Player::tagged_pos>,
     Field<NullableRef<TPos>, &Player::house_pos>,
-    Field<TUInt8, &Player::mana>,
+    Field<UInt8, &Player::mana>,
     Skip<1>>>;
 
 struct Game {
@@ -62,7 +60,7 @@ using TGame = Struct<
   Game,
   Fields<
     Seek<1>,
-    Field<TUInt8, &Game::level>,
+    Field<UInt8, &Game::level>,
     Seek<4>,
     Field<TPlayer, &Game::player>,
     Field<Array<TPos, 2>, &Game::hands>,

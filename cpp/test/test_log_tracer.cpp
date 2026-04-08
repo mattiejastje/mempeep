@@ -7,15 +7,13 @@
 
 using namespace mempeep;
 
-using TInt32 = Primitive<int32_t>;
-
 struct Inner {
   int32_t a;
   int32_t b;
 };
 
 using TInner
-  = Struct<Inner, Fields<Field<TInt32, &Inner::a>, Field<TInt32, &Inner::b>>>;
+  = Struct<Inner, Fields<Field<Int32, &Inner::a>, Field<Int32, &Inner::b>>>;
 
 struct Outer {
   Inner inner;
@@ -24,7 +22,7 @@ struct Outer {
 
 using TOuter = Struct<
   Outer,
-  Fields<Field<TInner, &Outer::inner>, Field<TInt32, &Outer::c>>>;
+  Fields<Field<TInner, &Outer::inner>, Field<Int32, &Outer::c>>>;
 
 TEST_CASE("simple") {
   auto reader = test::MockMemoryReader<uint8_t>{

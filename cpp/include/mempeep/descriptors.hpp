@@ -5,6 +5,7 @@
 #include <array>     // std::array
 #include <concepts>  // std::same_as
 #include <cstddef>   // std::size_t
+#include <cstdint>   // std::int8_t, ...
 #include <mempeep/detail/concepts/address.hpp>
 #include <mempeep/detail/concepts/descriptor.hpp>
 #include <mempeep/detail/concepts/primitive.hpp>
@@ -26,6 +27,17 @@ template <typename T>
 struct Primitive {
   using native_type = T;
 };
+
+using Int8 = Primitive<int8_t>;
+using Int16 = Primitive<int16_t>;
+using Int32 = Primitive<int32_t>;
+using Int64 = Primitive<int64_t>;
+using UInt8 = Primitive<uint8_t>;
+using UInt16 = Primitive<uint16_t>;
+using UInt32 = Primitive<uint32_t>;
+using UInt64 = Primitive<uint64_t>;
+using Float = Primitive<float>;
+using Double = Primitive<double>;
 
 /**
  * @brief Reads an address without following it.

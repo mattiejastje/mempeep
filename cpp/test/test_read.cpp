@@ -17,8 +17,6 @@ using namespace mempeep;
 // (can't use "" as it includes null terminator)
 static constexpr std::array<uint8_t, 0> empty_data{};
 
-using TUInt8 = Primitive<uint8_t>;
-
 TEST_CASE("successful read") {
   static constexpr uint8_t base{4};
   auto reader = test::MockMemoryReader<uint8_t>{test::game_data};
@@ -116,7 +114,7 @@ TEST_CASE("failed read: null ref") {
     uint8_t item;
   };
 
-  using TObj = Struct<Obj, Fields<Field<Ref<TUInt8>, &Obj::item>>>;
+  using TObj = Struct<Obj, Fields<Field<Ref<UInt8>, &Obj::item>>>;
   auto reader = test::MockMemoryReader<uint8_t>{"\x00"};
   Obj obj{};
   OkTracer tracer{};
@@ -128,7 +126,7 @@ TEST_CASE("failed read: missing ref") {
     uint8_t item;
   };
 
-  using TObj = Struct<Obj, Fields<Field<Ref<TUInt8>, &Obj::item>>>;
+  using TObj = Struct<Obj, Fields<Field<Ref<UInt8>, &Obj::item>>>;
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Obj obj{};
   OkTracer tracer{};
@@ -140,7 +138,7 @@ TEST_CASE("failed read: missing nullable ref") {
     std::optional<uint8_t> item;
   };
 
-  using TObj = Struct<Obj, Fields<Field<NullableRef<TUInt8>, &Obj::item>>>;
+  using TObj = Struct<Obj, Fields<Field<NullableRef<UInt8>, &Obj::item>>>;
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Obj obj{};
   OkTracer tracer{};
