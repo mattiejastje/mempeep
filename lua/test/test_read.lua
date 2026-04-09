@@ -302,7 +302,7 @@ end
 
 -- Null terminator present before max_len
 do
-  local reader = memory.mock_memory_reader("I4", "hello\0world")
+  local reader = memory.mock_memory_reader("I1", "\2\0hello\0world")
   local tracer = ok_tracer.new()
   local v, ok = read.read(d.ZString(11), 0, reader, tracer)
   assert(ok)
@@ -311,7 +311,7 @@ end
 
 -- No null terminator within max_len: returns all max_len bytes as-is
 do
-  local reader = memory.mock_memory_reader("I4", "abcd")
+  local reader = memory.mock_memory_reader("I1", "\1abcdefg\0")
   local tracer = ok_tracer.new()
   local v, ok = read.read(d.ZString(4), 0, reader, tracer)
   assert(not ok)
@@ -320,7 +320,7 @@ end
 
 -- Null terminator at position 0: empty string
 do
-  local reader = memory.mock_memory_reader("I4", "\0abc")
+  local reader = memory.mock_memory_reader("I1", "\1\0abc")
   local tracer = ok_tracer.new()
   local v, ok = read.read(d.ZString(4), 0, reader, tracer)
   assert(ok)
@@ -329,7 +329,7 @@ end
 
 -- Non-zero start offset
 do
-  local reader = memory.mock_memory_reader("I4", "\xFF\xFFhi\0")
+  local reader = memory.mock_memory_reader("I1", "\xFF\xFF\3hi\0")
   local tracer = ok_tracer.new()
   local v, ok = read.read(d.ZString(3), 2, reader, tracer)
   assert(ok)
@@ -348,7 +348,7 @@ end
 -- ZString inside a Struct: cursor lands after the fixed-size slot
 do
   local S = d.Struct("S", { d.Field(d.ZString(4), "name"), d.Field(d.Int32, "value") })
-  local reader = memory.mock_memory_reader("I4", "hi\0\0\x2A\x00\x00\x00")
+  local reader = memory.mock_memory_reader("I4", "\8\0\0\0\x2A\x00\x00\x00hi\0\0")
   local tracer = ok_tracer.new()
   local v, ok = read.read(S, 0, reader, tracer)
   assert(ok)

@@ -90,7 +90,7 @@ mempeep_ctype_impl.Bounded = function(desc, namespace)
 end
 
 remote_ctype_impl.ZString = function(desc, addr_size)
-  return desc.max_len, "std::array<char, 0x" .. string.format("%x", desc.max_len) .. ">"
+  return desc.addr_size, "char*"
 end
 
 native_ctype_impl.ZString = function(desc)
