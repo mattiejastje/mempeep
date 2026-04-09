@@ -1,8 +1,9 @@
 #pragma once
 
-#include <concepts>  // std::unsigned_integral
-#include <cstdint>   // std::uint64_t
-#include <limits>    // std::numeric_limits
+#include <algorithm>  // std::find
+#include <concepts>   // std::unsigned_integral
+#include <cstdint>    // std::uint64_t
+#include <limits>     // std::numeric_limits
 #include <mempeep/descriptors.hpp>
 #include <mempeep/detail/concepts/memory.hpp>
 #include <mempeep/detail/concepts/tracer.hpp>
@@ -90,6 +91,32 @@ template <
     }
   }
   return cursor;
+}
+
+template <std::size_t MaxLen, IsMemoryReader MemoryReader, IsTracer Tracer>
+[[nodiscard]] Cursor<MemoryReader> read_value_impl(
+  ZString<MaxLen>,
+  address_t<MemoryReader> address,
+  const MemoryReader& reader,
+  Tracer& tracer,
+  native_type_t<ZString<MaxLen>>& out  // std::string
+) {
+  if constexpr (MaxLen == 0) {
+    out.clear();
+    tracer.value(out);
+    return address;
+  } else {
+    std::array<char, MaxLen> buf{};
+    if (!reader(address, MaxLen, buf.data())) {
+      tracer.error(Error::READ_FAILED);
+      return {};
+    }
+    auto null_pos = std::find(buf.begin(), buf.end(), '\0');
+    out.assign(buf.begin(), null_pos);
+    if (null_pos == buf.end()) tracer.error(Error::ZSTRING_TOO_LONG);
+    tracer.value(out);
+    return advance(address, MaxLen, tracer);
+  }
 }
 
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>

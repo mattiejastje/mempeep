@@ -177,4 +177,20 @@ struct Bounded {
   using native_type = native_type_t<Desc>;
 };
 
+/**
+ * @brief Reads `MaxLen` bytes and truncates at the first null byte.
+ *
+ * Reads exactly `MaxLen` bytes from remote memory, then produces a
+ * std::string containing all characters before the first null terminator,
+ * or all `MaxLen` bytes if no null is found (noting an error).
+ * The cursor always advances
+ * by `MaxLen` regardless of where the null terminator falls.
+ *
+ * @tparam MaxLen Number of bytes to read.
+ */
+template <std::size_t MaxLen>
+struct ZString {
+  using native_type = std::string;
+};
+
 }  // namespace mempeep

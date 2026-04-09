@@ -4,8 +4,8 @@
 #include <array>
 #include <mempeep/read.hpp>
 #include <mempeep/test/memory.hpp>
-#include <mempeep/tracers/ok_tracer.hpp>
 #include <mempeep/tracers/log_tracer.hpp>
+#include <mempeep/tracers/ok_tracer.hpp>
 #include <optional>
 #include <string_view>
 
@@ -143,4 +143,51 @@ TEST_CASE("failed read: missing nullable ref") {
   Obj obj{};
   OkTracer tracer{};
   CHECK(!read<TObj>(0, reader, tracer, obj));
+}
+
+TEST_CASE("ZString: null terminator before max_len") {
+  auto reader = test::MockMemoryReader<uint8_t>{"hello\0world"};
+  std::string out{};
+  OkTracer tracer{};
+  CHECK(read<ZString<11>>(0, reader, tracer, out));
+  CHECK_EQ(out, "hello");
+}
+
+TEST_CASE("ZString: no null terminator") {
+  auto reader = test::MockMemoryReader<uint8_t>{"abcd"};
+  std::string out{};
+  OkTracer tracer{};
+  CHECK(!read<ZString<4>>(0, reader, tracer, out));
+  CHECK_EQ(out, "abcd");
+}
+
+TEST_CASE("ZString: null at position 0") {
+  auto reader = test::MockMemoryReader<uint8_t>{"\0abc"};
+  std::string out{};
+  OkTracer tracer{};
+  CHECK(read<ZString<4>>(0, reader, tracer, out));
+  CHECK_EQ(out, "");
+}
+
+TEST_CASE("ZString: unreadable address") {
+  auto reader = test::MockMemoryReader<uint8_t>{empty_data};
+  std::string out{};
+  OkTracer tracer{};
+  CHECK(!read<ZString<4>>(0, reader, tracer, out));
+}
+
+TEST_CASE("ZString: inside struct, cursor lands after fixed slot") {
+  struct S {
+    std::string name;
+    int32_t value;
+  };
+
+  using TS
+    = Struct<S, Fields<Field<ZString<4>, &S::name>, Field<Int32, &S::value>>>;
+  auto reader = test::MockMemoryReader<uint8_t>{"hi\0\0\x2A\x00\x00\x00"};
+  S s{};
+  OkTracer tracer{};
+  CHECK(read<TS>(0, reader, tracer, s));
+  CHECK_EQ(s.name, "hi");
+  CHECK_EQ(s.value, 42);
 }

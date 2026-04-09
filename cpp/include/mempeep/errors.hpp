@@ -13,6 +13,7 @@ enum class Error {
   VECTOR_INVALID_RANGE,
   VECTOR_MISALIGNED,
   VECTOR_TOO_LONG,
+  ZSTRING_TOO_LONG,
 };
 
 constexpr std::string_view error_name(Error e) {
