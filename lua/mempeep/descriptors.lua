@@ -243,7 +243,9 @@ end
 -- @param max_len number of bytes to read at the address
 -- @return ZString descriptor
 function M.ZString(max_len)
-  return { tag = "ZString", max_len = M.assert_count(max_len) }
+  M.assert_count(max_len)
+  assert(max_len >= 1, "max_len must be at least 1")
+  return { tag = "ZString", max_len = max_len }
 end
 
 --------------------------------------------------------------------------------

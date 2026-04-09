@@ -178,17 +178,17 @@ struct Bounded {
 };
 
 /**
- * @brief Reads `MaxLen` bytes and truncates at the first null byte.
+ * @brief Read and follow address, then read `MaxLen` bytes and truncate at
+ * null.
  *
- * Reads exactly `MaxLen` bytes from remote memory, then produces a
+ * Produces a
  * std::string containing all characters before the first null terminator,
  * or all `MaxLen` bytes if no null is found (noting an error).
- * The cursor always advances
- * by `MaxLen` regardless of where the null terminator falls.
  *
- * @tparam MaxLen Number of bytes to read.
+ * @tparam MaxLen Number of bytes to read at the address.
  */
 template <std::size_t MaxLen>
+  requires(MaxLen > 0)
 struct ZString {
   using native_type = std::string;
 };

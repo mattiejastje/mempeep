@@ -78,7 +78,6 @@ static_assert(IsFieldsItem<Field<Ref<Primitive<int>>, &SomeStruct::y>>);
 static_assert(IsFieldsItem<Field<NullableRef<Primitive<int>>, &SomeStruct::z>>);
 
 static_assert(IsDescriptor<ZString<16>>);
-static_assert(IsDescriptor<ZString<0>>);
 static_assert(std::same_as<native_type_t<ZString<16>>, std::string>);
 
 int main() { return 0; };

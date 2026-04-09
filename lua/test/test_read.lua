@@ -348,7 +348,7 @@ end
 -- ZString inside a Struct: cursor lands after the fixed-size slot
 do
   local S = d.Struct("S", { d.Field(d.ZString(4), "name"), d.Field(d.Int32, "value") })
-  local reader = memory.mock_memory_reader("I4", "\8\0\0\0\x2A\x00\x00\x00hi\0\0")
+  local reader = memory.mock_memory_reader("I4", "\x08\0\0\0\x2A\x00\x00\x00hi\0\0")
   local tracer = ok_tracer.new()
   local v, ok = read.read(S, 0, reader, tracer)
   assert(ok)

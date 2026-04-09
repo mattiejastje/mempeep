@@ -101,13 +101,14 @@ template <std::size_t MaxLen, IsMemoryReader MemoryReader, IsTracer Tracer>
   Tracer& tracer,
   native_type_t<ZString<MaxLen>>& out  // std::string
 ) {
-  if constexpr (MaxLen == 0) {
-    out.clear();
-    tracer.value(out);
-    return address;
-  } else {
+  address_t<MemoryReader> out_ptr{};
+  auto cursor = read_value<Primitive<address_t<MemoryReader>>>(
+    address, reader, tracer, out_ptr
+  );
+  if (!cursor) return {};
+  if (out_ptr) {
     std::array<char, MaxLen> buf{};
-    if (!reader(address, MaxLen, buf.data())) {
+    if (!reader(out_ptr, MaxLen, buf.data())) {
       tracer.error(Error::READ_FAILED);
       return {};
     }
@@ -115,8 +116,10 @@ template <std::size_t MaxLen, IsMemoryReader MemoryReader, IsTracer Tracer>
     out.assign(buf.begin(), null_pos);
     if (null_pos == buf.end()) tracer.error(Error::ZSTRING_TOO_LONG);
     tracer.value(out);
-    return advance(address, MaxLen, tracer);
+  } else {
+    tracer.error(Error::ADDRESS_NULL);
   }
+  return cursor;
 }
 
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
