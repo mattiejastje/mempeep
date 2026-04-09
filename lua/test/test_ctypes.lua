@@ -107,7 +107,51 @@ do
   assert(typ == "std::array<std::array<std::array<int32_t, 0x2>, 0x3>, 0x4>")
 end
 
+local mock_out = function(text)
+  local lines = {}
+  for line in text:gmatch("[^\n]+") do
+    table.insert(lines, line)
+  end
+  local out = {}
+  function out:write(s)
+    for line in s:gmatch("[^\n]+") do
+      assert(line == lines[1], "expected '" .. lines[1] .. "' but got '" .. s .. "'")
+    end
+    table.remove(lines, 1)
+  end
+  return out
+end
+
 do
-  c.remote_struct_cdecls(Points, 4, io.stdout)
-  c.native_struct_cdecls(Points, "", io.stdout)
+  c.remote_struct_cdecls(Points, 4, mock_out([[
+struct Point {
+  int16_t x;  // offset 0x0
+  int8_t _unknown2[0x6];
+  int16_t y;  // offset 0x8
+  int8_t _unknown4[0x2];
+};
+struct Points {
+  Point* points_begin;  // offset 0x0
+  Point* points_end;    // offset 0x4
+};]]))
+  c.native_struct_cdecls(Points, "", mock_out([[
+struct Point {
+  int16_t x;
+  int16_t y;
+};
+using TPoint = Struct<
+  Point,
+  Fields<
+    Field<Int16, &Point::x>,
+    Seek<0x8>,
+    Field<Int16, &Point::y>,
+    Skip<0x2>>>;
+struct Points {
+  std::vector<Point> points;
+};
+using TPoints = Struct<
+  Points,
+  Fields<
+    Field<Vector<TPoint, 0x1000>, &Points::points>>>;
+]]))
 end

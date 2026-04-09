@@ -115,7 +115,7 @@ function M.on_entry_print(entry)
   end
 end
 
-function M.make_on_entry_write(out)
+function M.on_entry_write(out)
   local on_entry = function(entry)
     local addr_str = fmt_addr(entry.address)
     if entry.kind == M.log_entry_kind.ERR then
