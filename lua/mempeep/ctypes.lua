@@ -90,7 +90,7 @@ mempeep_ctype_impl.Bounded = function(desc, namespace)
 end
 
 remote_ctype_impl.ZString = function(desc, addr_size)
-  return desc.addr_size, "char*"
+  return addr_size, "char*"
 end
 
 native_ctype_impl.ZString = function(desc)
