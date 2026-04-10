@@ -49,13 +49,3 @@ do
   d.assert_descriptor(d.Bounded(d.Int32, -10, 10))
   d.assert_descriptor(d.ZString(0x100))
 end
-
-do
-  d.assert_descriptor(d.PrimitiveArray("i2", {3}))
-  d.assert_descriptor(d.PrimitiveArray("i2", {3, 4}))
-  d.assert_descriptor(d.PrimitiveArray("I1", {8, 4, 2}))
-  local ok, err = pcall(d.PrimitiveArray, "i2", {})
-  assert(not ok)
-  local ok2, err2 = pcall(d.PrimitiveArray, "i2", {0, 3})
-  assert(not ok2)
-end

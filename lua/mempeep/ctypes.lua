@@ -2,6 +2,47 @@
 
 local M = {}
 
+local primitive_compatible_size_impl = {}
+
+--- Check if descriptor can be represented by a C++ Primitive.
+-- If so, returns its size, otherwise returns nil.
+-- Basically checks if it has a flat layout.
+local primitive_compatible_size = function(desc)
+  local impl = primitive_compatible_size_impl[desc.tag]
+  if not impl then return nil end
+  return impl(desc)
+end
+
+primitive_compatible_size_impl.Primitive = function(desc)
+  return string.packsize(desc.fmt)
+end
+
+primitive_compatible_size_impl.Bounded = function(desc)
+  return primitive_compatible_size(desc.desc)
+end
+
+primitive_compatible_size_impl.Array = function(desc)
+  local elem_size = primitive_compatible_size(desc.desc)
+  if not elem_size then return nil end
+  return desc.n * elem_size
+end
+
+primitive_compatible_size_impl.Struct = function(desc)
+  local offset = 0
+  for _, item in ipairs(desc.fields) do
+    if item.tag == "Skip" then
+      offset = offset + item.n
+    elseif item.tag == "Seek" then
+      offset = item.n
+    elseif item.tag == "Field" then
+      local field_size = primitive_compatible_size(item.desc)
+      if not field_size then return nil end
+      offset = offset + field_size
+    end
+  end
+  return offset
+end
+
 local remote_ctype_impl = {}
 
 function M.remote_ctype(desc, addr_size)
@@ -101,36 +142,6 @@ mempeep_ctype_impl.ZString = function(desc, namespace)
   return namespace .. "ZString<0x" .. string.format("%x", desc.max_len) .. ">"
 end
 
-local function nested_array_type(elem_type, dims)
-  local t = elem_type
-  for i = #dims, 1, -1 do
-    t = string.format("std::array<%s, 0x%x>", t, dims[i])
-  end
-  return t
-end
-
-local function primitive_array_count(dims)
-  local n = 1
-  for _, d in ipairs(dims) do n = n * d end
-  return n
-end
-
-remote_ctype_impl.PrimitiveArray = function(desc, addr_size)
-  local elem_size = string.packsize(desc.fmt)
-  local elem_type = fmt_to_ctype(desc.fmt)
-  return elem_size * primitive_array_count(desc.dims),
-         nested_array_type(elem_type, desc.dims)
-end
-
-native_ctype_impl.PrimitiveArray = function(desc)
-  return nested_array_type(fmt_to_ctype(desc.fmt), desc.dims)
-end
-
-mempeep_ctype_impl.PrimitiveArray = function(desc, namespace)
-  return string.format("%sPrimitive<%s>", namespace,
-         nested_array_type(fmt_to_ctype(desc.fmt), desc.dims))
-end
-
 remote_ctype_impl.RawAddr = function(desc, addr_size)
   return addr_size, "void*"
 end
@@ -176,7 +187,11 @@ native_ctype_impl.Array = function(desc)
 end
 
 mempeep_ctype_impl.Array = function(desc, namespace)
-  return namespace .. "Array<" .. M.mempeep_ctype(desc.desc, namespace) .. ", 0x" .. string.format("%x", desc.n) .. ">"
+  if primitive_compatible_size(desc) then
+    return "Primitive<" .. M.native_ctype(desc) .. ">"
+  else
+    return namespace .. "Array<" .. M.mempeep_ctype(desc.desc, namespace) .. ", 0x" .. string.format("%x", desc.n) .. ">"
+  end
 end
 
 remote_ctype_impl.Vector = function(desc, addr_size)
@@ -225,19 +240,26 @@ native_ctype_impl.Struct = function(desc)
 end
 
 mempeep_ctype_impl.Struct = function(desc, namespace)
-  return "T" .. desc.name
+  if primitive_compatible_size(desc) then
+    return namespace .. "Primitive<" .. desc.name .. ">"
+  else
+    return "T" .. desc.name
+  end
 end
 
 function M.remote_struct_cdecl(desc, addr_size, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   out:write(string.format("struct %s {\n", desc.name))
   local offset = 0
+  local pad_index = 0
   for i, item in ipairs(desc.fields) do
     if item.tag == "Skip" then
-      out:write(string.format("  int8_t _unknown%d[0x%x];\n", i, item.n))
+      out:write(string.format("  int8_t _pad%d[0x%x];\n", pad_index, item.n))
+      pad_index = pad_index + 1
       offset = offset + item.n
     elseif item.tag == "Seek" then
-      out:write(string.format("  int8_t _unknown%d[0x%x];\n", i, item.n - offset))
+      out:write(string.format("  int8_t _pad%d[0x%x];\n", pad_index, item.n - offset))
+      pad_index = pad_index + 1
       offset = item.n
     elseif item.tag == "Field" then
       local field_size, field_ctype = M.remote_ctype(item.desc, addr_size)
@@ -256,11 +278,35 @@ end
 local native_struct_cdecl_1 = function(desc, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   out:write(string.format("struct %s {\n", desc.name))
-  local offset = 0
-  for _, item in ipairs(desc.fields) do
-    if item.tag == "Field" then
-      local field_ctype = M.native_ctype(item.desc)
-      out:write(string.format("  %s %s;\n", field_ctype, item.key))
+  if primitive_compatible_size(desc) then
+    local offset = 0
+    local pad_index = 0
+    for _, item in ipairs(desc.fields) do
+      if item.tag == "Skip" then
+        out:write(string.format("  uint8_t _pad%d[0x%x];\n", pad_index, item.n))
+        pad_index = pad_index + 1
+        offset = offset + item.n
+      elseif item.tag == "Seek" then
+        local gap = item.n - offset
+        if gap > 0 then
+          out:write(string.format("  uint8_t _pad%d[0x%x];\n", pad_index, gap))
+          pad_index = pad_index + 1
+        end
+        offset = item.n
+      elseif item.tag == "Field" then
+        local field_size = primitive_compatible_size(item.desc)
+        assert(field_size ~= nil)
+        local field_native_ctype = M.native_ctype(item.desc)
+        out:write(string.format("  %s %s;\n", field_native_ctype, item.key))
+        offset = offset + field_size
+      end
+    end
+  else
+    for _, item in ipairs(desc.fields) do
+      if item.tag == "Field" then
+        local field_ctype = M.native_ctype(item.desc)
+        out:write(string.format("  %s %s;\n", field_ctype, item.key))
+      end
     end
   end
   out:write("};\n\n")
@@ -268,6 +314,7 @@ end
 
 local native_struct_cdecl_2 = function(desc, namespace, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
+  if primitive_compatible_size(desc) then return end
   out:write("using T" .. desc.name .. " = " .. namespace .. "Struct<\n")
   out:write("  " .. desc.name .. ",\n")
   out:write("  " .. namespace .. "Fields<\n")
@@ -296,7 +343,7 @@ end
 -- @param visited table used to track already-visited struct names
 -- @param order table (array) accumulating structs in declaration order
 local function collect_structs(desc, visited, order)
-  if desc.tag == "Primitive" or desc.tag == "PrimitiveArray" or desc.tag == "RawAddr" or desc.tag == "ZString" then
+  if desc.tag == "Primitive" or desc.tag == "RawAddr" or desc.tag == "ZString" then
     return
   elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "CircularList" or desc.tag == "Bounded" then
     collect_structs(desc.desc, visited, order)

@@ -91,15 +91,6 @@ read_value_impl.ZString = function(desc, address, reader, tracer)
   return cursor, value
 end
 
--- slow implementation (lua not meant for real time anyway)
-read_value_impl.PrimitiveArray = function(desc, address, reader, tracer)
-  local array_desc = { tag = "Primitive", fmt = desc.fmt }
-  for i = #desc.dims, 1, -1 do
-    array_desc = { tag = "Array", desc = array_desc, n = desc.dims[i] }
-  end
-  return read_value(array_desc, address, reader, tracer)
-end
-
 --- RawAddr: read one address-sized integer without following it.
 -- Reads via Primitive using the reader's own address format.
 read_value_impl.RawAddr = function(desc, address, reader, tracer)

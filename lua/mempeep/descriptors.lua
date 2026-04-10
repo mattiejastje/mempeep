@@ -6,7 +6,6 @@ local M = {}
 -- Valid descriptor tags.
 local descriptor_tags = {
   Primitive = true,
-  PrimitiveArray = true,
   RawAddr = true,
   Ref = true,
   NullableRef = true,
@@ -134,23 +133,6 @@ M.UInt32 = M.Primitive("I4")
 M.UInt64 = M.Primitive("I8")
 M.Float = M.Primitive("f")
 M.Double = M.Primitive("d")
-
---- Read a multi-dimensional array of primitives as a single contiguous block.
--- Equivalent to repeated Primitive reads but expressed as one descriptor.
--- Dimension order matches C declaration order:
---   PrimArray("i2", {3, 4})  <=>  int16_t[3][4]
--- @param fmt string.unpack format string for the element type
--- @param dims array of dimensions
--- @return PrimitiveArray descriptor
-function M.PrimitiveArray(fmt, dims)
-  M.assert_fmt(fmt)
-  assert(type(dims) == "table" and #dims >= 1, "dims must be a non-empty array")
-  for _, d in ipairs(dims) do
-    M.assert_count(d)
-    assert(d >= 1, "each extent must be at least 1")
-  end
-  return { tag = "PrimitiveArray", fmt = fmt, dims = dims }
-end
 
 --- Read an address-sized integer without following it.
 -- @return RawAddr descriptor
