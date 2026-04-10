@@ -1,7 +1,7 @@
 local d = require("mempeep.descriptors")
 local c = require("mempeep.ctypes")
 
-local Point = d.Struct("Point", { d.Field(d.Int16, "x"), d.Seek(8), d.Field(d.Int16, "y"), d.Skip(2) })
+local Point = d.Struct("Point", { d.Field(d.Int16, "x"), d.Skip(6), d.Field(d.Int16, "y"), d.Skip(2) })
 local Node = d.Struct("Node", { d.Field(d.Int64, "data"), d.Field(d.RawAddr(), "next") })
 local Points = d.Struct("Points", { d.Field(d.Vector(Point, 0x1000), "points") })
 
@@ -97,7 +97,7 @@ local mock_out = function(text)
   local out = {}
   function out:write(s)
     for line in s:gmatch("[^\n]+") do
-      assert(line == lines[1], "expected '" .. lines[1] .. "' but got '" .. s .. "'")
+      assert(line == lines[1], "expected '" .. tostring(lines[1]) .. "' but got '" .. tostring(s) .. "'")
     end
     table.remove(lines, 1)
   end
@@ -133,7 +133,7 @@ using TPoints = Struct<
 ]]))
 end
 
--- native_struct_cdecls: flat struct (no padding) emits Primitive alias
+-- native_struct_cdecls: flat struct (no padding) emits native only
 do
   local Flat = d.Struct("Flat", { d.Field(d.Int16, "x"), d.Field(d.Int16, "y") })
   c.native_struct_cdecls(Flat, "", mock_out([[
@@ -144,7 +144,7 @@ struct Flat {
 ]]))
 end
 
--- native_struct_cdecls: Struct with Skip emits padding members and Primitive alias
+-- native_struct_cdecls: Struct with Skip emits native with padding members
 do
   local Padded = d.Struct("Padded", { d.Field(d.Int16, "x"), d.Skip(2), d.Field(d.Int16, "y"), d.Skip(2) })
   c.native_struct_cdecls(Padded, "", mock_out([[
@@ -157,20 +157,25 @@ struct Padded {
 ]]))
 end
 
--- native_struct_cdecls: Struct with Seek emits padding members and Primitive alias
+-- native_struct_cdecls: Struct with Seek emits Struct
 do
   local Sparse = d.Struct("Sparse", { d.Field(d.Int16, "x"), d.Seek(8), d.Field(d.Int16, "y"), d.Skip(2) })
   c.native_struct_cdecls(Sparse, "", mock_out([[
 struct Sparse {
   int16_t x;
-  uint8_t _pad0[0x6];
   int16_t y;
-  uint8_t _pad1[0x2];
 };
+using TSparse = Struct<
+  Sparse,
+  Fields<
+    Field<Int16, &Sparse::x>,
+    Seek<0x8>,
+    Field<Int16, &Sparse::y>,
+    Skip<0x2>>>;
 ]]))
 end
 
--- native_struct_cdecls: Struct with Bounded field emits Primitive alias
+-- native_struct_cdecls: Struct with Bounded field emits native only
 do
   local Bounded = d.Struct("Bounded", { d.Field(d.Bounded(d.Int32, 0, 100), "a") })
   c.native_struct_cdecls(Bounded, "", mock_out([[
@@ -180,7 +185,7 @@ struct Bounded {
 ]]))
 end
 
--- native_struct_cdecls: Struct with Array field emits Primitive alias
+-- native_struct_cdecls: Struct with Array field emits native only
 do
   local WithArray = d.Struct("WithArray", { d.Field(d.Array(d.Int16, 4), "items") })
   c.native_struct_cdecls(WithArray, "", mock_out([[

@@ -33,7 +33,7 @@ primitive_compatible_size_impl.Struct = function(desc)
     if item.tag == "Skip" then
       offset = offset + item.n
     elseif item.tag == "Seek" then
-      offset = item.n
+      return nil
     elseif item.tag == "Field" then
       local field_size = primitive_compatible_size(item.desc)
       if not field_size then return nil end
