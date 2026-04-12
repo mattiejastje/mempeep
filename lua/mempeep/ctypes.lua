@@ -366,36 +366,38 @@ local function collect_structs(desc, visited, order)
   end
 end
 
---- Apply `fn` to all Struct descriptors reachable from `desc` in topological
+--- Apply `fn` to all Struct descriptors reachable from `descs` in topological
 -- order (dependencies before dependents).
--- @param desc descriptor to walk
+-- @param descs descriptors to walk
 -- @param fn function(desc) called once per unique reachable Struct
-local function each_struct(desc, fn)
+local function each_struct(descs, fn)
   local visited = {}
   local order = {}
-  collect_structs(desc, visited, order)
+  for _, desc in ipairs(descs) do
+    collect_structs(desc, visited, order)
+  end
   for _, s in ipairs(order) do
     fn(s)
   end
 end
 
---- Write all Struct declarations reachable from `desc` in correct declaration
+--- Write all Struct declarations reachable from `descs` in correct declaration
 -- order (dependencies before dependents), using the remote C layout.
--- @param desc descriptor to collect structs from
+-- @param descs descriptor to collect structs from
 -- @param addr_size integer size in bytes of the remote address type
 -- @param out output stream
-function M.remote_struct_cdecls(desc, addr_size, out)
-  each_struct(desc, function(s)
+function M.remote_struct_cdecls(descs, addr_size, out)
+  each_struct(descs, function(s)
     M.remote_struct_cdecl(s, addr_size, out)
   end)
 end
 
---- Write all Struct declarations reachable from `desc` in correct declaration
+--- Write all Struct declarations reachable from `descs` in correct declaration
 -- order (dependencies before dependents), using the native C++ layout.
--- @param desc descriptor to collect structs from
+-- @param descs descriptor to collect structs from
 -- @param out output stream
-function M.native_struct_cdecls(desc, namespace, out)
-  each_struct(desc, function(s)
+function M.native_struct_cdecls(descs, namespace, out)
+  each_struct(descs, function(s)
     M.native_struct_cdecl(s, namespace, out)
   end)
 end
