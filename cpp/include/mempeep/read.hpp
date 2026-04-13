@@ -425,17 +425,17 @@ namespace mempeep {
  * @param address Remote address to read from.
  * @param out     Native object to populate.
  * @param tracer  Receives error reports; its `success()` is returned.
- * @return The result of `tracer.success()` (convertible to bool).
+ * @return The result of `tracer.success()` (converted to bool).
  */
 template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
-[[nodiscard]] auto read(
+[[nodiscard]] bool read(
   address_t<MemoryReader> address,
   const MemoryReader& reader,
   Tracer& tracer,
   native_type_t<Desc>& out
 ) {
   std::ignore = detail::read_value<Desc>(address, reader, tracer, out);
-  return tracer.success();
+  return static_cast<bool>(tracer.success());
 };
 
 }  // namespace mempeep
