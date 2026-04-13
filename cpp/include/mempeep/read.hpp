@@ -110,7 +110,7 @@ template <std::size_t MaxLen, IsMemoryReader MemoryReader, IsTracer Tracer>
     std::array<char, MaxLen> buf{};
     if (!reader(out_ptr, MaxLen, buf.data())) {
       tracer.error(Error::READ_FAILED);
-      return {};
+      return cursor;
     }
     auto null_pos = std::find(buf.begin(), buf.end(), '\0');
     out.assign(buf.begin(), null_pos);
