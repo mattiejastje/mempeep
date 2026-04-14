@@ -20,6 +20,19 @@ namespace mempeep {
  * were reported and false otherwise, but callers should not assume this:
  * a tracer may implement custom logic, for example treating certain error
  * codes as non-fatal.
+ * 
+ * @note This concept is checked against representative argument types only.
+ * Implementations must accept any IsFieldsItem for begin_fields_item and
+ * any IsDescriptor for begin_desc. The simplest way to satisfy this is a
+ * templated method:
+ * 
+ * @code
+ * template <IsFieldsItem Item>
+ * void begin_fields_item(std::uint64_t address, Item item) {}
+ *
+ * template <IsDescriptor Desc>
+ * void begin_desc(std::uint64_t address, Desc desc) {}
+ * @endcode
  *
  * @tparam Tracer The type to check.
  */
