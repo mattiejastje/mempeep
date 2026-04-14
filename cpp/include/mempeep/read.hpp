@@ -19,9 +19,12 @@ template <std::unsigned_integral S, std::unsigned_integral T>
   return static_cast<S>(s + t);
 }
 
-// Advance address by n with traced error in case of overflow.
+/**
+ * @brief Advance address by n, reporting ADDRESS_OVERFLOW to tracer on failure.
+ * @note Mutates tracer on overflow; always check the return value.
+ */
 template <IsAddress Addr, IsTracer Tracer>
-[[nodiscard]] std::optional<Addr> advance(
+[[nodiscard]] std::optional<Addr> try_advance(
   Addr addr, std::size_t n, Tracer& tracer
 ) {
   auto u = checked_add(addr, n);
@@ -64,7 +67,7 @@ template <IsPrimitive T, IsMemoryReader MemoryReader, IsTracer Tracer>
 ) {
   if (reader(address, sizeof(out), &out)) {
     tracer.value(out);
-    return advance(address, sizeof(out), tracer);
+    return try_advance(address, sizeof(out), tracer);
   } else {
     tracer.error(Error::READ_FAILED);
     return {};
@@ -131,7 +134,7 @@ template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
   Tracer& tracer,
   auto&
 ) {
-  return advance(address, N, tracer);
+  return try_advance(address, N, tracer);
 }
 
 template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
@@ -143,7 +146,7 @@ template <auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
   Tracer& tracer,
   auto&
 ) {
-  return advance(base, N, tracer);
+  return try_advance(base, N, tracer);
 }
 
 template <
