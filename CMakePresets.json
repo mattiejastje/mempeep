@@ -19,7 +19,7 @@
       }
     },
     {
-      "name": "clang-windows-base",
+      "name": "windows-clang-base",
       "hidden": true,
       "inherits": "windows-base",
       "cacheVariables": {
@@ -28,34 +28,92 @@
       }
     },
     {
-      "name": "debug",
+      "name": "windows-debug",
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
-      "name": "release",
-      "inherits": "debug",
+      "name": "windows-release",
+      "inherits": "windows-debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
-      "name": "coverage",
-      "inherits": "clang-windows-base",
+      "name": "windows-coverage",
+      "inherits": "windows-clang-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_COVERAGE": "ON"
+      }
+    },
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "linux-gcc-debug",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-gcc-release",
+      "inherits": "linux-gcc-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux-clang-debug",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-clang-release",
+      "inherits": "linux-clang-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux-coverage",
+      "inherits": "linux-clang-debug",
+      "cacheVariables": {
         "ENABLE_COVERAGE": "ON"
       }
     }
   ],
   "testPresets": [
     {
-      "name": "coverage",
-      "configurePreset": "coverage",
+      "name": "windows-coverage",
+      "configurePreset": "windows-coverage",
       "environment": {
-        "LLVM_PROFILE_FILE": "${sourceDir}/out/build/coverage/profiles/%p.profraw"
+        "LLVM_PROFILE_FILE": "${sourceDir}/out/build/windows-coverage/profiles/%p.profraw"
+      }
+    },
+    {
+      "name": "linux-coverage",
+      "configurePreset": "linux-coverage",
+      "environment": {
+        "LLVM_PROFILE_FILE": "${sourceDir}/out/build/linux-coverage/profiles/%p.profraw"
       }
     }
   ]
