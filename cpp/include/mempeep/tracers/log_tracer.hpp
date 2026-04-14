@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cstddef>     // std::size_t
-#include <cstdint>     // std::uint64_t
-#include <format>      // std::format_to
+#include <cstddef>  // std::size_t
+#include <cstdint>  // std::uint64_t
+#include <format>   // std::format_to
 #include <mempeep/descriptors.hpp>
 #include <mempeep/errors.hpp>
 #include <nameof.hpp>
@@ -36,7 +36,7 @@ using PathSegment = std::variant<std::string_view, std::size_t>;
  * Carries either a successfully read value or an error code, along with
  * the remote address and the path to the field being read.
  * Callers may inspect `payload` to distinguish values from errors.
- * 
+ *
  * All fields are non-owning views or references into data owned by the
  * LogTracer that constructed this entry. The entry must not outlive the
  * value() or error() call that created it.
@@ -136,6 +136,10 @@ namespace mempeep {
  *
  * All members are public by design. This struct is intended to be used
  * directly, aggregated, or used as a starting point for custom tracers.
+ *
+ * @note This class depends on the nameof library for field name reflection
+ *       in begin_fields_item. It is the only part of mempeep that carries
+ *       this dependency.
  *
  * @tparam OnLogEntry Callable type invoked once per log entry.
  */
