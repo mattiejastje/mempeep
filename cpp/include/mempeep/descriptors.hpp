@@ -164,12 +164,13 @@ struct Struct<T, Fields<Items...>> {
 
 /**
  * @brief Reads a descriptor and note an error if the value is out of bounds.
+ * Out-of-bounds values are returned.
  *
  * The native type must support comparison.
  *
  * @tparam Desc The descriptor to read.
  * @tparam Min  The minimum value.
- * @tparam Min  The maximum value.
+ * @tparam Max  The maximum value.
  */
 template <IsDescriptor Desc, native_type_t<Desc> Min, native_type_t<Desc> Max>
   requires(Min <= Max)
