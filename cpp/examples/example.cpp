@@ -10,8 +10,6 @@ using namespace mempeep;
 
 // --- Types ---
 
-using TInt8 = Primitive<int8_t>;
-
 struct Pos {
   int8_t x, y;
 };
@@ -22,7 +20,7 @@ struct Pos {
 // 3: skip
 using TPos = Struct<
   Pos,
-  Fields<Field<TInt8, &Pos::x>, Skip<1>, Field<TInt8, &Pos::y>, Skip<1>>>;
+  Fields<Field<Int8, &Pos::x>, Skip<1>, Field<Int8, &Pos::y>, Skip<1>>>;
 
 struct Entity {
   int8_t id;
@@ -44,7 +42,7 @@ using TEntity = Struct<
   Entity,
   Fields<
     Seek<2>,
-    Field<TInt8, &Entity::id>,
+    Field<Int8, &Entity::id>,
     Skip<1>,
     Field<TPos, &Entity::pos>,
     Field<RawAddr<uint8_t>, &Entity::target_addr>,
