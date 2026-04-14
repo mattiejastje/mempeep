@@ -131,6 +131,10 @@ struct Vector {
  * node count exceeds `MaxLen` before the list closes. The cursor advances
  * past the stored head address only, not past the nodes themselves.
  *
+ * Every `Next` field in the list must be non-zero. A zero `Next` value
+ * is not a terminator; it reports `Error::ADDRESS_NULL` and stops
+ * traversal. Only the head address being zero signals an empty list.
+ *
  * @tparam Desc   Descriptor for each node. `native_type_t<Desc>` is the node
  *                type.
  * @tparam Next   Member pointer into `native_type_t<Desc>` identifying the
