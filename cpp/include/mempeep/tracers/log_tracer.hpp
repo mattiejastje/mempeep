@@ -134,6 +134,9 @@ namespace mempeep {
  * compiler. Use the OnEntryPrint() helper to
  * obtain a suitable callback for writing to a stream.
  *
+ * All members are public by design. This struct is intended to be used
+ * directly, aggregated, or used as a starting point for custom tracers.
+ *
  * @tparam OnLogEntry Callable type invoked once per log entry.
  */
 template <typename OnLogEntry>

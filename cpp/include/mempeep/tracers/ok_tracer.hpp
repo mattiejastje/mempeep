@@ -9,6 +9,9 @@ namespace mempeep {
 /**
  * @brief Minimal IsTracer implementation that reports whether any error
  * occurred. Suitable when error details are not needed.
+ *
+ * All members are public by design. This struct is intended to be used
+ * directly, aggregated, or used as a starting point for custom tracers.
  */
 struct OkTracer {
   bool ok = true;
