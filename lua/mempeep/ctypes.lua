@@ -9,7 +9,9 @@ local primitive_compatible_size_impl = {}
 -- Basically checks if it has a flat layout.
 local primitive_compatible_size = function(desc)
   local impl = primitive_compatible_size_impl[desc.tag]
-  if not impl then return nil end
+  if not impl then
+    return nil
+  end
   return impl(desc)
 end
 
@@ -23,7 +25,9 @@ end
 
 primitive_compatible_size_impl.Array = function(desc)
   local elem_size = primitive_compatible_size(desc.desc)
-  if not elem_size then return nil end
+  if not elem_size then
+    return nil
+  end
   return desc.n * elem_size
 end
 
@@ -36,7 +40,9 @@ primitive_compatible_size_impl.Struct = function(desc)
       return nil
     elseif item.tag == "Field" then
       local field_size = primitive_compatible_size(item.desc)
-      if not field_size then return nil end
+      if not field_size then
+        return nil
+      end
       offset = offset + field_size
     end
   end
@@ -81,9 +87,13 @@ fmt_to_ctype_impl.d = "double"
 
 local fmt_to_ctype = function(fmt)
   local typ = fmt_to_ctype_impl[fmt]
-  if typ then return typ end
+  if typ then
+    return typ
+  end
   local n = fmt:match("^c(%d+)$")
-  if n then return "std::array<char, " .. n .. ">" end
+  if n then
+    return "std::array<char, " .. n .. ">"
+  end
   error("unknown format '" .. tostring(fmt) .. "'")
   return typ
 end
@@ -113,7 +123,9 @@ end
 mempeep_ctype_impl.Primitive = function(desc, namespace)
   assert(desc.fmt)
   local prim = fmt_to_prim_impl[desc.fmt]
-  if prim then return namespace .. prim end
+  if prim then
+    return namespace .. prim
+  end
   return namespace .. "Primitive<" .. fmt_to_ctype(desc.fmt) .. ">"
 end
 
@@ -190,7 +202,12 @@ mempeep_ctype_impl.Array = function(desc, namespace)
   if primitive_compatible_size(desc) then
     return "Primitive<" .. M.native_ctype(desc) .. ">"
   else
-    return namespace .. "Array<" .. M.mempeep_ctype(desc.desc, namespace) .. ", 0x" .. string.format("%x", desc.n) .. ">"
+    return namespace
+      .. "Array<"
+      .. M.mempeep_ctype(desc.desc, namespace)
+      .. ", 0x"
+      .. string.format("%x", desc.n)
+      .. ">"
   end
 end
 
@@ -204,7 +221,12 @@ native_ctype_impl.Vector = function(desc)
 end
 
 mempeep_ctype_impl.Vector = function(desc, namespace)
-  return namespace .. "Vector<" .. M.mempeep_ctype(desc.desc, namespace) .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
+  return namespace
+    .. "Vector<"
+    .. M.mempeep_ctype(desc.desc, namespace)
+    .. ", 0x"
+    .. string.format("%x", desc.max_len)
+    .. ">"
 end
 
 remote_ctype_impl.List = function(desc, addr_size)
@@ -217,7 +239,16 @@ native_ctype_impl.List = function(desc)
 end
 
 mempeep_ctype_impl.List = function(desc, namespace)
-  return namespace .. "List<" .. M.mempeep_ctype(desc.desc, namespace) .. ", &" .. desc.desc.name .. "::" .. desc.next_key .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
+  return namespace
+    .. "List<"
+    .. M.mempeep_ctype(desc.desc, namespace)
+    .. ", &"
+    .. desc.desc.name
+    .. "::"
+    .. desc.next_key
+    .. ", 0x"
+    .. string.format("%x", desc.max_len)
+    .. ">"
 end
 
 remote_ctype_impl.Struct = function(desc, addr_size)
@@ -314,7 +345,9 @@ end
 
 local native_struct_cdecl_2 = function(desc, namespace, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
-  if primitive_compatible_size(desc) then return end
+  if primitive_compatible_size(desc) then
+    return
+  end
   out:write("using T" .. desc.name .. " = " .. namespace .. "Struct<\n")
   out:write("  " .. desc.name .. ",\n")
   out:write("  " .. namespace .. "Fields<\n")
@@ -345,7 +378,14 @@ end
 local function collect_structs(desc, visited, order)
   if desc.tag == "Primitive" or desc.tag == "RawAddr" or desc.tag == "ZString" then
     return
-  elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "List" or desc.tag == "Bounded" then
+  elseif
+    desc.tag == "Ref"
+    or desc.tag == "NullableRef"
+    or desc.tag == "Array"
+    or desc.tag == "Vector"
+    or desc.tag == "List"
+    or desc.tag == "Bounded"
+  then
     collect_structs(desc.desc, visited, order)
   elseif desc.tag == "Struct" then
     if visited[desc.name] then

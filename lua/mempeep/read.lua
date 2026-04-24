@@ -37,7 +37,7 @@ end
 -- Each entry is a function(desc, address, reader, tracer) -> cursor, value
 --------------------------------------------------------------------------------
 
-local read_value  -- forward declaration
+local read_value -- forward declaration
 
 local read_value_impl = {}
 
@@ -236,7 +236,7 @@ read_value_impl.List = function(desc, address, reader, tracer)
   end
 end
 
-local read_fields_item  -- forward declaration
+local read_fields_item -- forward declaration
 
 --- Struct: read fields in order, dispatching each through `read_fields_item`.
 -- Field values are returned by `read_fields_item` and collected into `out` here.

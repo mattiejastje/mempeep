@@ -215,7 +215,8 @@ end
 
 -- native_struct_cdecls: non-primitive Struct with primitive Array field emits Primitive descriptor
 do
-  local WithPrimArray = d.Struct("WithPrimArray", { d.Field(d.Ref(d.Int32), "a"), d.Field(d.Array(d.Int16, 4), "items") })
+  local WithPrimArray =
+    d.Struct("WithPrimArray", { d.Field(d.Ref(d.Int32), "a"), d.Field(d.Array(d.Int16, 4), "items") })
   local out = mock_out([[
 struct WithPrimArray {
   int32_t a;
