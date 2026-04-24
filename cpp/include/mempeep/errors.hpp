@@ -45,4 +45,4 @@ constexpr std::string_view error_name(Error e) {
   }
 }
 
-}
+}  // namespace mempeep
