@@ -246,6 +246,10 @@ mempeep_ctype_impl.List = function(desc, namespace)
     .. desc.desc.name
     .. "::"
     .. desc.next_key
+    .. ", "
+    .. namespace
+    .. "ListKind::"
+    .. desk.kind
     .. ", 0x"
     .. string.format("%x", desc.max_len)
     .. ">"

@@ -173,8 +173,8 @@ end
 
 --- Kinds of linked list traversal.
 M.list_kind = {
-  CIRCULAR = "circular",
-  NULL_TERMINATED = "null_terminated",
+  CIRCULAR = "CIRCULAR",
+  NULL_TERMINATED = "NULL_TERMINATED",
 }
 
 --- Read an intrusive linked list.
@@ -191,10 +191,7 @@ function M.List(desc, next_key, kind, max_len)
   M.assert_descriptor(desc)
   assert(desc.tag == "Struct", "expected a Struct")
   M.assert_string(next_key)
-  assert(
-    kind == M.list_kind.CIRCULAR or kind == M.list_kind.NULL_TERMINATED,
-    "expected a list_kind value, got " .. tostring(kind)
-  )
+  assert(kind and M.list_kind[kind], "expected a list_kind value, got " .. tostring(kind))
   local found = false
   for _, field in ipairs(desc.fields) do
     if field.tag == "Field" and field.key == next_key then

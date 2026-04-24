@@ -217,12 +217,12 @@ read_value_impl.List = function(desc, address, reader, tracer)
     end
     local next_addr = node[desc.next_key]
     if not next_addr or next_addr == 0 then
-      if desc.kind == "circular" then
+      if desc.kind == "CIRCULAR" then
         tracer:error(errors.LIST_UNEXPECTED_NULL)
       end
       return cursor, list
     elseif next_addr == head_ptr then
-      if desc.kind ~= "circular" then
+      if desc.kind ~= "CIRCULAR" then
         tracer:error(errors.LIST_UNEXPECTED_CYCLE)
       end
       return cursor, list
