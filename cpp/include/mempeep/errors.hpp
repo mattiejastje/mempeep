@@ -8,7 +8,9 @@ enum class Error {
   READ_FAILED,
   ADDRESS_NULL,
   ADDRESS_OVERFLOW,
-  CIRCULAR_LIST_TOO_LONG,
+  LIST_TOO_LONG,
+  LIST_UNEXPECTED_CYCLE,
+  LIST_UNEXPECTED_NULL,
   PRIMITIVE_OUT_OF_BOUNDS,
   VECTOR_INVALID_RANGE,
   VECTOR_MISALIGNED,
@@ -24,8 +26,12 @@ constexpr std::string_view error_name(Error e) {
       return "ADDRESS_NULL";
     case Error::ADDRESS_OVERFLOW:
       return "ADDRESS_OVERFLOW";
-    case Error::CIRCULAR_LIST_TOO_LONG:
-      return "CIRCULAR_LIST_TOO_LONG";
+    case Error::LIST_TOO_LONG:
+      return "LIST_TOO_LONG";
+    case Error::LIST_UNEXPECTED_CYCLE:
+      return "LIST_UNEXPECTED_CYCLE";
+    case Error::LIST_UNEXPECTED_NULL:
+      return "LIST_UNEXPECTED_NULL";
     case Error::PRIMITIVE_OUT_OF_BOUNDS:
       return "PRIMITIVE_OUT_OF_BOUNDS";
     case Error::VECTOR_INVALID_RANGE:
