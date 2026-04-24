@@ -11,7 +11,7 @@ local descriptor_tags = {
   NullableRef = true,
   Array = true,
   Vector = true,
-  CircularList = true,
+  List = true,
   Struct = true,
   Bounded = true,
   ZString = true,
@@ -171,17 +171,30 @@ function M.Vector(desc, max_len)
   return { tag = "Vector", desc = M.assert_descriptor(desc), max_len = M.assert_count(max_len) }
 end
 
---- Read a circular intrusive linked list.
--- Reads a head address; traverses nodes using `desc` until the head is
--- revisited. The `next_key` field of each decoded node holds the next address.
+--- Kinds of linked list traversal.
+M.list_kind = {
+  CIRCULAR = "circular",
+  NULL_TERMINATED = "null_terminated",
+}
+
+--- Read an intrusive linked list.
+-- Reads a head address; traverses nodes using `desc`.
+-- The `next_key` field of each decoded node holds the next address.
+-- Circular lists are traversed until the head is revisited.
+-- Null terminated lists are traversed until the next address is null.
 -- @param desc descriptor for each node (must be a Struct)
 -- @param next_key string key in the decoded node table that holds the next address
+-- @param kind the kind of list
 -- @param max_len maximum number of nodes before an error is raised
--- @return CircularList descriptor
-function M.CircularList(desc, next_key, max_len)
+-- @return List descriptor
+function M.List(desc, next_key, kind, max_len)
   M.assert_descriptor(desc)
   assert(desc.tag == "Struct", "expected a Struct")
   M.assert_string(next_key)
+  assert(
+    kind == M.list_kind.CIRCULAR or kind == M.list_kind.NULL_TERMINATED,
+    "expected a list_kind value, got " .. tostring(kind)
+  )
   local found = false
   for _, field in ipairs(desc.fields) do
     if field.tag == "Field" and field.key == next_key then
@@ -192,9 +205,10 @@ function M.CircularList(desc, next_key, max_len)
   end
   assert(found, "next_key '" .. next_key .. "' not found in Struct")
   return {
-    tag = "CircularList",
+    tag = "List",
     desc = desc,
     next_key = next_key,
+    kind = kind,
     max_len = M.assert_count(max_len),
   }
 end

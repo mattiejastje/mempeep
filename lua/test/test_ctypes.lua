@@ -78,13 +78,13 @@ do
 end
 
 do
-  local size, typ = c.remote_ctype(d.CircularList(Node, "next", 0x1000), 4)
+  local size, typ = c.remote_ctype(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 4)
   assert(size == 4)
   assert(typ == "Node*")
 end
 
 do
-  local size, typ = c.remote_ctype(d.CircularList(Node, "next", 0x1000), 8)
+  local size, typ = c.remote_ctype(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 8)
   assert(size == 8)
   assert(typ == "Node*")
 end

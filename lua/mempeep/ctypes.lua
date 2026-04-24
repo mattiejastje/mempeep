@@ -207,17 +207,17 @@ mempeep_ctype_impl.Vector = function(desc, namespace)
   return namespace .. "Vector<" .. M.mempeep_ctype(desc.desc, namespace) .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
 end
 
-remote_ctype_impl.CircularList = function(desc, addr_size)
+remote_ctype_impl.List = function(desc, addr_size)
   local _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
   return addr_size, ref_ctype .. "*"
 end
 
-native_ctype_impl.CircularList = function(desc)
+native_ctype_impl.List = function(desc)
   return "std::vector<" .. M.native_ctype(desc.desc) .. ">"
 end
 
-mempeep_ctype_impl.CircularList = function(desc, namespace)
-  return namespace .. "CircularList<" .. M.mempeep_ctype(desc.desc, namespace) .. ", &" .. desc.desc.name .. "::" .. desc.next_key .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
+mempeep_ctype_impl.List = function(desc, namespace)
+  return namespace .. "List<" .. M.mempeep_ctype(desc.desc, namespace) .. ", &" .. desc.desc.name .. "::" .. desc.next_key .. ", 0x" .. string.format("%x", desc.max_len) .. ">"
 end
 
 remote_ctype_impl.Struct = function(desc, addr_size)
@@ -345,7 +345,7 @@ end
 local function collect_structs(desc, visited, order)
   if desc.tag == "Primitive" or desc.tag == "RawAddr" or desc.tag == "ZString" then
     return
-  elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "CircularList" or desc.tag == "Bounded" then
+  elseif desc.tag == "Ref" or desc.tag == "NullableRef" or desc.tag == "Array" or desc.tag == "Vector" or desc.tag == "List" or desc.tag == "Bounded" then
     collect_structs(desc.desc, visited, order)
   elseif desc.tag == "Struct" then
     if visited[desc.name] then

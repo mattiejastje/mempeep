@@ -192,8 +192,8 @@ read_value_impl.Vector = function(desc, address, reader, tracer)
   return cursor, vec
 end
 
---- CircularList: read a circular intrusive linked list.
-read_value_impl.CircularList = function(desc, address, reader, tracer)
+--- List: read an intrusive linked list.
+read_value_impl.List = function(desc, address, reader, tracer)
   local cursor, head_ptr = read_value({ tag = "Primitive", fmt = reader.fmt }, address, reader, tracer)
   if not cursor then
     return nil, nil
@@ -206,7 +206,7 @@ read_value_impl.CircularList = function(desc, address, reader, tracer)
   local list = {}
   local list_cursor = head_ptr
   local index = 0
-  repeat
+  while true do
     local node
     tracer:begin_element(list_cursor, index)
     list_cursor, node = read_value(desc.desc, list_cursor, reader, tracer)
@@ -217,18 +217,23 @@ read_value_impl.CircularList = function(desc, address, reader, tracer)
     end
     local next_addr = node[desc.next_key]
     if not next_addr or next_addr == 0 then
-      tracer:error(errors.ADDRESS_NULL)
+      if desc.kind == "circular" then
+        tracer:error(errors.LIST_UNEXPECTED_NULL)
+      end
+      return cursor, list
+    elseif next_addr == head_ptr then
+      if desc.kind ~= "circular" then
+        tracer:error(errors.LIST_UNEXPECTED_CYCLE)
+      end
       return cursor, list
     end
     list_cursor = next_addr
     index = index + 1
     if index > desc.max_len then
-      tracer:error(errors.CIRCULAR_LIST_TOO_LONG)
+      tracer:error(errors.LIST_TOO_LONG)
       return cursor, list
     end
-  until list_cursor == head_ptr
-
-  return cursor, list
+  end
 end
 
 local read_fields_item  -- forward declaration

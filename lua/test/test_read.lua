@@ -185,6 +185,32 @@ do
 end
 
 -- ---------------------------------------------------------------------------
+-- Null terminated list
+-- ---------------------------------------------------------------------------
+
+-- Three-node null terminated list: A -> B -> C -> 0
+-- Each node: value(i32) at +0, next(weak ptr) at +4 => 8 bytes/node
+-- head ptr at offset 0; node A at 4, B at 12, C at 20
+do
+  local Node = d.Struct("Node", { d.Field(d.Int32, "value"), d.Field(d.RawAddr(), "next") })
+  local reader = memory.mock_memory_reader(
+    "I4",
+    "\x04\x00\x00\x00" -- head ptr = 4
+      .. "\x01\x00\x00\x00\x0C\x00\x00\x00" -- A: value=1, next=12
+      .. "\x02\x00\x00\x00\x14\x00\x00\x00" -- B: value=2, next=20
+      .. "\x03\x00\x00\x00\x00\x00\x00\x00" -- C: value=3, next=0
+  )
+  local tracer = ok_tracer.new()
+  local v, ok = read.read(d.List(Node, "next", d.list_kind.NULL_TERMINATED, 0x1000), 0, reader, tracer)
+  assert(ok)
+  assert(v)
+  assert(#v == 3)
+  assert(v[1].value == 1)
+  assert(v[2].value == 2)
+  assert(v[3].value == 3)
+end
+
+-- ---------------------------------------------------------------------------
 -- Circular list
 -- ---------------------------------------------------------------------------
 
@@ -201,7 +227,7 @@ do
       .. "\x03\x00\x00\x00\x04\x00\x00\x00" -- C: value=3, next=4
   )
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.CircularList(Node, "next", 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0, reader, tracer)
   assert(ok)
   assert(v)
   assert(#v == 3)
@@ -215,7 +241,7 @@ do
   local Node = d.Struct("Node", { d.Field(d.Int32, "value"), d.Field(d.RawAddr(), "next") })
   local reader = memory.mock_memory_reader("I4", "\x00\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.CircularList(Node, "next", 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0, reader, tracer)
   assert(ok)
   assert(v)
   assert(#v == 0)
@@ -226,7 +252,7 @@ do
   local Node = d.Struct("Node", { d.Field(d.Int32, "value"), d.Field(d.RawAddr(), "next") })
   local reader = memory.mock_memory_reader("I4", "")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.CircularList(Node, "next", 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0, reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
