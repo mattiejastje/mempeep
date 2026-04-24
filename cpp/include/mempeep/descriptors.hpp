@@ -120,20 +120,22 @@ struct Vector {
   using native_type = std::vector<native_type_t<Desc>>;
 };
 
+enum class ListKind {
+    CIRCULAR,
+    NULL_TERMINATED,
+};
+
 /**
- * @brief Descriptor for a circular intrusive linked list.
+ * @brief Descriptor for an intrusive linked list.
  *
  * Reads a head address from the current address. If null, the list is
  * empty and no error is reported. Otherwise, nodes are read starting from
  * the head address using Desc, and traversal continues by following the
  * address stored in the `Next` field of each decoded node until that address
- * equals the head address. Reports `Error::CIRCULAR_LIST_TOO_LONG` if the
+ * equals the head address (for circular lists) or null (for null terminated lists).
+ * Reports `Error::CIRCULAR_LIST_TOO_LONG` if the
  * node count exceeds `MaxLen` before the list closes. The cursor advances
  * past the stored head address only, not past the nodes themselves.
- *
- * Every `Next` field in the list must be non-zero. A zero `Next` value
- * is not a terminator; it reports `Error::ADDRESS_NULL` and stops
- * traversal. Only the head address being zero signals an empty list.
  *
  * @tparam Desc   Descriptor for each node. `native_type_t<Desc>` is the node
  *                type.
@@ -144,10 +146,10 @@ struct Vector {
  *                Error::CIRCULAR_LIST_TOO_LONG and stopping. Prevents
  *                infinite loops on corrupt data.
  */
-template <IsDescriptor Desc, auto Next, std::size_t MaxLen>
+template <IsDescriptor Desc, auto Next, ListKind Kind, std::size_t MaxLen>
   requires std::same_as<member_class_t<Next>, native_type_t<Desc>>
            && IsAddress<member_type_t<Next>>
-struct CircularList {
+struct List {
   using native_type = std::vector<native_type_t<Desc>>;
 };
 

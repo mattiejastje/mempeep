@@ -321,6 +321,7 @@ template <
 template <
   IsDescriptor Desc,
   auto Next,
+  ListKind Kind,
   std::size_t MaxLen,
   IsMemoryReader MemoryReader,
   IsTracer Tracer>
@@ -329,11 +330,11 @@ template <
     <= std::numeric_limits<member_type_t<Next>>::max()
   )
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
-  CircularList<Desc, Next, MaxLen>,
+  List<Desc, Next, Kind, MaxLen>,
   address_t<MemoryReader> address,
   const MemoryReader& reader,
   Tracer& tracer,
-  native_type_t<CircularList<Desc, Next, MaxLen>>& out
+  native_type_t<List<Desc, Next, Kind, MaxLen>>& out
 ) {
   address_t<MemoryReader> head_ptr{};
   auto cursor = read_value<Primitive<address_t<MemoryReader>>>(
@@ -352,15 +353,21 @@ template <
     if (!cursor) return cursor;
     const auto next_addr = static_cast<address_t<MemoryReader>>(elem.*Next);
     if (next_addr == 0) {
-      tracer.error(Error::LIST_UNEXPECTED_NULL);
-      return cursor;
+      if constexpr (Kind != ListKind::NULL_TERMINATED)
+        tracer.error(Error::LIST_UNEXPECTED_NULL);
+      break;
+    }
+    if (next_addr == head_ptr) {
+      if constexpr (Kind != ListKind::CIRCULAR)
+        tracer.error(Error::LIST_UNEXPECTED_CYCLE);
+      break;
     }
     list_cursor = next_addr;
     if (++count > MaxLen) {
       tracer.error(Error::LIST_TOO_LONG);
-      return cursor;
+      break;
     }
-  } while (*list_cursor != head_ptr);
+  } while (true);
   return cursor;
 }
 

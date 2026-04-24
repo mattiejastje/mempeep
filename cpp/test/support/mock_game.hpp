@@ -65,7 +65,7 @@ using TGame = Struct<
     Field<TPlayer, &Game::player>,
     Field<Array<TPos, 2>, &Game::hands>,
     Field<Vector<TPos, 0x1000>, &Game::pets>,
-    Field<CircularList<TCave, &Cave::next, 0x1000>, &Game::caves>>>;
+    Field<List<TCave, &Cave::next, ListKind::CIRCULAR, 0x1000>, &Game::caves>>>;
 
 static constexpr char game_data[]
   = "\x00\x00\x00\x00"  // 0:  unused
