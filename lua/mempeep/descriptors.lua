@@ -67,6 +67,17 @@ function M.assert_uint_fmt(v)
   return v
 end
 
+--- Assert that `v` is an integer.
+-- @param v value to check
+-- @return v
+function M.assert_int(v)
+  assert(
+    type(v) == "number" and math.type(v) == "integer",
+    "expected an integer, got " .. tostring(v)
+  )
+  return v
+end
+
 --- Assert that `v` is a non-negative integer.
 -- @param v value to check
 -- @return v
@@ -261,10 +272,10 @@ function M.Skip(n)
 end
 
 --- Seek to an absolute byte offset from the struct base address.
--- @param n byte offset (non-negative integer)
+-- @param n byte offset (integer)
 -- @return Seek fields item
 function M.Seek(n)
-  return { tag = "Seek", n = M.assert_count(n) }
+  return { tag = "Seek", n = M.assert_int(n) }
 end
 
 return M
