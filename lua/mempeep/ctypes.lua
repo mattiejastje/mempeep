@@ -427,7 +427,7 @@ end
 
 --- Write all Struct declarations reachable from `descs` in correct declaration
 -- order (dependencies before dependents), using the remote C layout.
--- @param descs descriptor to collect structs from
+-- @param descs descriptors to collect structs from
 -- @param addr_size integer size in bytes of the remote address type
 -- @param out output stream
 function M.remote_struct_cdecls(descs, addr_size, out)
@@ -438,12 +438,73 @@ end
 
 --- Write all Struct declarations reachable from `descs` in correct declaration
 -- order (dependencies before dependents), using the native C++ layout.
--- @param descs descriptor to collect structs from
+-- @param descs descriptors to collect structs from
 -- @param out output stream
 function M.native_struct_cdecls(descs, namespace, out)
   each_struct(descs, function(s)
     M.native_struct_cdecl(s, namespace, out)
   end)
+end
+
+--- Collect all C++ includes required to declare the native types reachable
+-- from `desc`. Each include is a string such as `"<vector>"`.
+-- @param desc descriptor to walk
+-- @param visited table used to track already-visited struct names
+-- @param includes table used to accumulate required include strings
+local function walk_native_includes(desc, visited, includes)
+  if desc.tag == "Primitive" then
+    if desc.fmt ~= "f" and desc.fmt ~= "d" then
+      includes["<cstdint>"] = true
+    end
+  elseif desc.tag == "RawAddr" then
+    includes["<cstdint>"] = true
+  elseif desc.tag == "Bounded" then
+    walk_native_includes(desc.desc, visited, includes)
+  elseif desc.tag == "ZString" then
+    includes["<string>"] = true
+  elseif desc.tag == "NullableRef" then
+    includes["<optional>"] = true
+    walk_native_includes(desc.desc, visited, includes)
+  elseif desc.tag == "Ref" then
+    walk_native_includes(desc.desc, visited, includes)
+  elseif desc.tag == "Array" then
+    includes["<array>"] = true
+    walk_native_includes(desc.desc, visited, includes)
+  elseif desc.tag == "Vector" or desc.tag == "List" then
+    includes["<vector>"] = true
+    walk_native_includes(desc.desc, visited, includes)
+  elseif desc.tag == "Struct" then
+    if visited[desc.name] then return end
+    visited[desc.name] = true
+    for _, item in ipairs(desc.fields) do
+      if item.tag == "Field" then
+        walk_native_includes(item.desc, visited, includes)
+      end
+    end
+  else
+    error("walk_native_includes: unknown descriptor tag: " .. tostring(desc.tag))
+  end
+end
+
+--- Write #include directives for all C++ headers required by `descs`.
+-- Always includes <mempeep/descriptors.hpp>. Additional headers are
+-- determined by walking the descriptor tree.
+-- @param descs array of descriptors to walk
+-- @param out output stream
+function M.write_native_includes(descs, out)
+  local visited = {}
+  local includes = { ["<mempeep/descriptors.hpp>"] = true }
+  for _, desc in ipairs(descs) do
+    walk_native_includes(desc, visited, includes)
+  end
+  local sorted = {}
+  for inc in pairs(includes) do
+    sorted[#sorted + 1] = inc
+  end
+  table.sort(sorted)
+  for _, inc in ipairs(sorted) do
+    out:write("#include " .. inc .. "\n")
+  end
 end
 
 return M
