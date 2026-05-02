@@ -2,6 +2,14 @@
 
 local M = {}
 
+local hex_str = function(n)
+  if n >= 0 then
+    return string.format("0x%x", n)
+  else
+    return string.format("-0x%x", -n)
+  end
+end
+
 local primitive_compatible_size_impl = {}
 
 --- Check if descriptor can be represented by a C++ Primitive.
@@ -151,7 +159,7 @@ native_ctype_impl.ZString = function(desc)
 end
 
 mempeep_ctype_impl.ZString = function(desc, namespace)
-  return namespace .. "ZString<0x" .. string.format("%x", desc.max_len) .. ">"
+  return namespace .. "ZString<" .. hex_str(desc.max_len) .. ">"
 end
 
 remote_ctype_impl.RawAddr = function(desc, addr_size)
@@ -191,11 +199,11 @@ end
 
 remote_ctype_impl.Array = function(desc, addr_size)
   local ref_size, ref_ctype = M.remote_ctype(desc.desc, addr_size)
-  return desc.n * ref_size, "std::array<" .. ref_ctype .. ", 0x" .. string.format("%x", desc.n) .. ">"
+  return desc.n * ref_size, "std::array<" .. ref_ctype .. ", " .. hex_str(desc.n) .. ">"
 end
 
 native_ctype_impl.Array = function(desc)
-  return "std::array<" .. M.native_ctype(desc.desc) .. ", 0x" .. string.format("%x", desc.n) .. ">"
+  return "std::array<" .. M.native_ctype(desc.desc) .. ", " .. hex_str(desc.n) .. ">"
 end
 
 mempeep_ctype_impl.Array = function(desc, namespace)
@@ -205,8 +213,8 @@ mempeep_ctype_impl.Array = function(desc, namespace)
     return namespace
       .. "Array<"
       .. M.mempeep_ctype(desc.desc, namespace)
-      .. ", 0x"
-      .. string.format("%x", desc.n)
+      .. ", "
+      .. hex_str(desc.n)
       .. ">"
   end
 end
@@ -224,8 +232,8 @@ mempeep_ctype_impl.Vector = function(desc, namespace)
   return namespace
     .. "Vector<"
     .. M.mempeep_ctype(desc.desc, namespace)
-    .. ", 0x"
-    .. string.format("%x", desc.max_len)
+    .. ", "
+    .. hex_str(desc.max_len)
     .. ">"
 end
 
@@ -250,8 +258,8 @@ mempeep_ctype_impl.List = function(desc, namespace)
     .. namespace
     .. "ListKind::"
     .. desc.kind
-    .. ", 0x"
-    .. string.format("%x", desc.max_len)
+    .. ", "
+    .. hex_str(desc.max_len)
     .. ">"
 end
 
@@ -294,10 +302,10 @@ function M.remote_struct_cdecl(desc, addr_size, out)
     elseif item.tag == "Field" then
       local field_size, field_ctype = M.remote_ctype(item.desc, addr_size)
       if item.desc.tag == "Vector" then
-        out:write(string.format("  %s %s_begin;  // offset 0x%x\n", field_ctype, item.key, offset))
-        out:write(string.format("  %s %s_end;    // offset 0x%x\n", field_ctype, item.key, offset + addr_size))
+        out:write(string.format("  %s %s_begin;  // offset %s\n", field_ctype, item.key, hex_str(offset)))
+        out:write(string.format("  %s %s_end;    // offset %s\n", field_ctype, item.key, hex_str(offset + addr_size)))
       else
-        out:write(string.format("  %s %s;  // offset 0x%x\n", field_ctype, item.key, offset))
+        out:write(string.format("  %s %s;  // offset %s\n", field_ctype, item.key, hex_str(offset)))
       end
       offset = offset + field_size
     end
@@ -313,7 +321,7 @@ local native_struct_cdecl_1 = function(desc, out)
     local pad_index = 0
     for _, item in ipairs(desc.fields) do
       if item.tag == "Skip" then
-        out:write(string.format("  uint8_t _pad%d[0x%x];\n", pad_index, item.n))
+        out:write(string.format("  uint8_t _pad%d[%s];\n", pad_index, hex_str(item.n)))
         pad_index = pad_index + 1
         offset = offset + item.n
       elseif item.tag == "Seek" then
@@ -349,9 +357,9 @@ local native_struct_cdecl_2 = function(desc, namespace, out)
     local is_last = (i == #desc.fields)
     local comma = is_last and ">>;\n\n" or ",\n"
     if item.tag == "Skip" then
-      out:write(string.format("    %sSkip<0x%x>%s", namespace, item.n, comma))
+      out:write(string.format("    %sSkip<%s>%s", namespace, hex_str(item.n), comma))
     elseif item.tag == "Seek" then
-      out:write(string.format("    %sSeek<0x%x>%s", namespace, item.n, comma))
+      out:write(string.format("    %sSeek<%s>%s", namespace, hex_str(item.n), comma))
     elseif item.tag == "Field" then
       local mtype = M.mempeep_ctype(item.desc, namespace)
       out:write(string.format("    %sField<%s, &%s::%s>%s", namespace, mtype, desc.name, item.key, comma))
