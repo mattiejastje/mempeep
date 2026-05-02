@@ -286,15 +286,10 @@ function M.remote_struct_cdecl(desc, addr_size, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   out:write(string.format("struct %s {\n", desc.name))
   local offset = 0
-  local pad_index = 0
   for i, item in ipairs(desc.fields) do
     if item.tag == "Skip" then
-      out:write(string.format("  int8_t _pad%d[0x%x];\n", pad_index, item.n))
-      pad_index = pad_index + 1
       offset = offset + item.n
     elseif item.tag == "Seek" then
-      out:write(string.format("  int8_t _pad%d[0x%x];\n", pad_index, item.n - offset))
-      pad_index = pad_index + 1
       offset = item.n
     elseif item.tag == "Field" then
       local field_size, field_ctype = M.remote_ctype(item.desc, addr_size)
