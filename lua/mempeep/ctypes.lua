@@ -317,12 +317,7 @@ local native_struct_cdecl_1 = function(desc, out)
         pad_index = pad_index + 1
         offset = offset + item.n
       elseif item.tag == "Seek" then
-        local gap = item.n - offset
-        if gap > 0 then
-          out:write(string.format("  uint8_t _pad%d[0x%x];\n", pad_index, gap))
-          pad_index = pad_index + 1
-        end
-        offset = item.n
+        error("primitive compatible struct cannot have Seek")
       elseif item.tag == "Field" then
         local field_size = primitive_compatible_size(item.desc)
         assert(field_size ~= nil)
