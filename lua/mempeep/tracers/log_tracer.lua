@@ -21,13 +21,18 @@ M.log_entry_kind = {
 }
 
 --- Create a new log tracer instance.
--- @param out file handle to write output to (default: io.stdout)
+-- @param on_entry log handler
+-- @param level log level
+-- @param opts additional options (currently only max_elements)
 -- @return tracer table implementing the mempeep tracer interface
-function M.new(on_entry, level)
+function M.new(on_entry, level, opts)
+  opts = opts or {}
+  local max_elements = opts.max_elements or math.maxinteger
   local t = {
     ok = true,
     _path_stack = {},
     _addr_stack = {},
+    _index_stack = {},
   }
 
   function t:error(e)
@@ -45,34 +50,37 @@ function M.new(on_entry, level)
   end
 
   function t:value(v)
-    if level >= M.log_level.VALUES then
-      local repr
-      if type(v) == "number" then
-        if math.type(v) == "integer" then
-          if v >= 0 then
-            repr = string.format("0x%x", v)
-          else
-            repr = string.format("-0x%x", -v)
-          end
+    if level < M.log_level.VALUES then return end
+    local index = self._index_stack[#self._index_stack]
+    if index and index > max_elements then return end
+    local repr
+    if index and index == max_elements then
+      repr = "(further elements suppressed)"
+    elseif type(v) == "number" then
+      if math.type(v) == "integer" then
+        if v >= 0 then
+          repr = string.format("0x%x", v)
         else
-          repr = tostring(v)
+          repr = string.format("-0x%x", -v)
         end
-      elseif type(v) == "string" then
-        repr = '"'
-          .. v:gsub("[%c\x80-\xff]", function(c)
-            return string.format("\\x%02x", c:byte())
-          end)
-          .. '"'
       else
         repr = tostring(v)
       end
-      on_entry({
-        address = self._addr_stack[#self._addr_stack] or 0,
-        path = table.concat(self._path_stack),
-        text = repr,
-        kind = M.log_entry_kind.VAL,
-      })
+    elseif type(v) == "string" then
+      repr = '"'
+        .. v:gsub("[%c\x80-\xff]", function(c)
+          return string.format("\\x%02x", c:byte())
+        end)
+        .. '"'
+    else
+      repr = tostring(v)
     end
+    on_entry({
+      address = self._addr_stack[#self._addr_stack] or 0,
+      path = table.concat(self._path_stack),
+      text = repr,
+      kind = M.log_entry_kind.VAL,
+    })
   end
 
   function t:begin_fields_item(address, item)
@@ -88,10 +96,12 @@ function M.new(on_entry, level)
   end
 
   function t:begin_element(address, index)
+    self._index_stack[#self._index_stack + 1] = index
     self._path_stack[#self._path_stack + 1] = "[" .. index .. "]"
   end
 
   function t:end_element()
+    self._index_stack[#self._index_stack] = nil
     self._path_stack[#self._path_stack] = nil
   end
 
