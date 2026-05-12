@@ -112,9 +112,7 @@ do
   local out = mock_out([[
 struct Point {
   int16_t x;  // offset 0x0
-  int8_t _pad0[0x6];
   int16_t y;  // offset 0x8
-  int8_t _pad1[0x2];
 };
 struct Points {
   Point* points_begin;  // offset 0x0
