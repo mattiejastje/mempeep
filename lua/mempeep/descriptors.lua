@@ -242,8 +242,7 @@ function M.Bounded(desc, min, max)
   return { tag = "Bounded", desc = desc, min = min, max = max }
 end
 
---- Read an address and follow it.
---- Then read max_len bytes and turn into a string, terminating at null.
+--- Read max_len bytes and turn into a string, terminating at null.
 -- @param max_len number of bytes to read at the address
 -- @return ZString descriptor
 function M.ZString(max_len)

@@ -151,7 +151,7 @@ mempeep_ctype_impl.Bounded = function(desc, namespace)
 end
 
 remote_ctype_impl.ZString = function(desc, addr_size)
-  return addr_size, "char*"
+  return addr_size, string.format("char[%d]", desc.max_len)
 end
 
 native_ctype_impl.ZString = function(desc)
@@ -176,6 +176,10 @@ end
 
 remote_ctype_impl.Ref = function(desc, addr_size)
   local _, ref_ctype = M.remote_ctype(desc.desc, addr_size)
+  if string.find(ref_ctype, "^char%[%d+%]$") then
+    -- sadly can't write char[..]* in C, fall back to char*
+    ref_ctype = "char"
+  end
   return addr_size, ref_ctype .. "*"
 end
 

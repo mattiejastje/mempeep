@@ -66,18 +66,7 @@ end
 
 --- ZString: read desc.max_len bytes, truncate at the first null byte.
 read_value_impl.ZString = function(desc, address, reader, tracer)
-  local cursor, ptr = read_value({ tag = "Primitive", fmt = reader.fmt }, address, reader, tracer)
-  if not cursor then
-    return nil, nil
-  end
-
-  if ptr == 0 then
-    tracer:error(errors.ADDRESS_NULL)
-    -- cursor is still valid; we just could not follow the pointer
-    return cursor, nil
-  end
-
-  local bytes = reader:read(ptr, desc.max_len)
+  local bytes = reader:read(address, desc.max_len)
   if not bytes then
     tracer:error(errors.READ_FAILED)
     return nil, nil
@@ -88,7 +77,7 @@ read_value_impl.ZString = function(desc, address, reader, tracer)
   end
   local value = null_pos and bytes:sub(1, null_pos - 1) or bytes
   tracer:value(value)
-  return cursor, value
+  return advance(address, desc.max_len, reader, tracer), value
 end
 
 --- RawAddr: read one address-sized integer without following it.
