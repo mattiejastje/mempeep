@@ -146,7 +146,7 @@ TEST_CASE("failed read: missing nullable ref") {
 }
 
 TEST_CASE("ZString: null terminator before max_len") {
-  auto reader = test::MockMemoryReader<uint8_t>{"\2\0hello\0world"};
+  auto reader = test::MockMemoryReader<uint8_t>{"hello\0world"};
   std::string out{};
   OkTracer tracer{};
   CHECK(read<ZString<11>>(0, reader, tracer, out));
@@ -154,7 +154,7 @@ TEST_CASE("ZString: null terminator before max_len") {
 }
 
 TEST_CASE("ZString: no null terminator") {
-  auto reader = test::MockMemoryReader<uint8_t>{"\1abcdefg\0"};
+  auto reader = test::MockMemoryReader<uint8_t>{"abcdefg\0"};
   std::string out{};
   OkTracer tracer{};
   CHECK(!read<ZString<4>>(0, reader, tracer, out));
@@ -162,7 +162,7 @@ TEST_CASE("ZString: no null terminator") {
 }
 
 TEST_CASE("ZString: null at position 0") {
-  auto reader = test::MockMemoryReader<uint8_t>{"\1\0abc"};
+  auto reader = test::MockMemoryReader<uint8_t>{"\0abc"};
   std::string out{};
   OkTracer tracer{};
   CHECK(read<ZString<4>>(0, reader, tracer, out));
@@ -176,7 +176,7 @@ TEST_CASE("ZString: unreadable address") {
   CHECK(!read<ZString<4>>(0, reader, tracer, out));
 }
 
-TEST_CASE("ZString: inside struct, cursor lands after fixed slot") {
+TEST_CASE("ZString: inside struct, cursor lands after string") {
   struct S {
     std::string name;
     int32_t value;
@@ -184,7 +184,7 @@ TEST_CASE("ZString: inside struct, cursor lands after fixed slot") {
 
   using TS
     = Struct<S, Fields<Field<ZString<4>, &S::name>, Field<Int32, &S::value>>>;
-  auto reader = test::MockMemoryReader<uint32_t>{"\x08\0\0\0\x2A\x00\x00\x00hi\0\0"};
+  auto reader = test::MockMemoryReader<uint32_t>{"hi\0\0\x2A\x00\x00\x00"};
   S s{};
   OkTracer tracer{};
   CHECK(read<TS>(0, reader, tracer, s));
