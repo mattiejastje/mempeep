@@ -4,11 +4,24 @@
 #include <mempeep/descriptors.hpp>
 #include <mempeep/detail/concepts/address.hpp>
 
+namespace mempeep {
+
+// Forward declaration for mutual recursion.
+template <IsDescriptor Desc, IsAddress AddrT>
+consteval std::size_t byte_size() noexcept;
+
+}  // namespace mempeep
+
 namespace mempeep::detail {
 
 template <IsPrimitive T, IsAddress AddrT>
 consteval std::size_t byte_size_impl(Primitive<T>, AddrT) noexcept {
   return sizeof(T);
+}
+
+template <IsDescriptor Desc, IsAddress AddrT>
+consteval std::size_t byte_size_impl(RemoteAddr<Desc, AddrT>, AddrT) noexcept {
+  return byte_size<Desc, AddrT>();
 }
 
 template <
@@ -17,7 +30,7 @@ template <
   native_type_t<Desc> Max,
   IsAddress AddrT>
 consteval std::size_t byte_size_impl(Bounded<Desc, Min, Max>, AddrT) noexcept {
-  return byte_size_impl(Desc{}, AddrT{});
+  return byte_size<Desc, AddrT>();
 }
 
 template <std::size_t MaxLen, IsAddress AddrT>
@@ -42,7 +55,7 @@ consteval std::size_t byte_size_impl(NullableRef<Desc>, AddrT) noexcept {
 
 template <IsDescriptor Desc, std::size_t N, IsAddress AddrT>
 consteval std::size_t byte_size_impl(Array<Desc, N>, AddrT) noexcept {
-  return N * byte_size_impl(Desc{}, AddrT{});
+  return N * byte_size<Desc, AddrT>();
 }
 
 template <IsDescriptor Desc, std::size_t MaxLen, IsAddress AddrT>
@@ -74,7 +87,7 @@ consteval std::size_t byte_size_impl(
       else if constexpr (requires { Items::seek; })
         offset = Items::seek;
       else
-        offset += byte_size_impl(typename Items::desc_type{}, AddrT{});
+        offset += byte_size<typename Items::desc_type, AddrT>();
     }(),
     ...
   );

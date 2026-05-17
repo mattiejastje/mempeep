@@ -189,3 +189,65 @@ TEST_CASE("ZString: inside struct, cursor lands after string") {
   CHECK_EQ(s.name, "hi");
   CHECK_EQ(s.value, 42);
 }
+
+TEST_CASE("RemoteAddr: deferred read of an integer") {
+  auto reader = test::MockMemoryReader<uint8_t>{
+    "\x00\x00"
+    "\x44\x33\x22\x11"
+  };
+  // read address only
+  RemoteValue<Int32, uint8_t> out{};
+  OkTracer tracer{};
+  CHECK(read(
+    RemoteValue<RemoteAddr<Int32, uint8_t>, uint8_t>{2}, reader, tracer, out
+  ));
+  CHECK_EQ(out.address, 2);
+  // read full structure
+  int32_t value{};
+  OkTracer tracer2{};
+  CHECK(read(out, reader, tracer2, value));
+  CHECK_EQ(value, 0x11223344);
+}
+
+TEST_CASE("RemoteAddr: deferred read of ZString") {
+  auto reader = test::MockMemoryReader<uint8_t>{"hello\0world"};
+  // read address only
+  RemoteValue<ZString<6>, uint8_t> out{};
+  OkTracer tracer{};
+  CHECK(read(
+    RemoteValue<RemoteAddr<ZString<6>, uint8_t>, uint8_t>{0},
+    reader,
+    tracer,
+    out
+  ));
+  CHECK_EQ(out.address, 0);
+  // read full structure
+  std::string value{};
+  OkTracer tracer2{};
+  CHECK(read(out, reader, tracer2, value));
+  CHECK_EQ(value, "hello");
+}
+
+TEST_CASE("RemoteAddr: inside struct, cursor advances past descriptor bytes") {
+  struct S {
+    RemoteValue<Int32, uint8_t> data;
+    int16_t after;
+  };
+  using TS = Struct<
+    S,
+    Fields<
+      Field<RemoteAddr<Int32, uint8_t>, &S::data>,
+      Field<Int16, &S::after>>>;
+  auto reader = test::MockMemoryReader<uint8_t>{"\x44\x33\x22\x11\x77\x66"};
+  // read address only
+  S s{};
+  OkTracer tracer{};
+  CHECK(read(RemoteValue<TS, uint8_t>{0}, reader, tracer, s));
+  CHECK_EQ(s.data.address, 0);
+  CHECK_EQ(s.after, 0x6677);
+  // read data
+  int32_t data{};
+  OkTracer tracer2{};
+  CHECK(read(s.data, reader, tracer2, data));
+  CHECK_EQ(data, 0x11223344);
+}

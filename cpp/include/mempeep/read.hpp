@@ -8,6 +8,7 @@
 #include <mempeep/detail/concepts/memory.hpp>
 #include <mempeep/detail/concepts/tracer.hpp>
 #include <mempeep/detail/remote_value.hpp>
+#include <mempeep/size.hpp>
 #include <optional>  // std::optional
 #include <utility>   // std::ignore
 
@@ -73,6 +74,21 @@ template <IsPrimitive T, IsMemoryReader MemoryReader, IsTracer Tracer>
     tracer.error(Error::READ_FAILED);
     return {};
   }
+}
+
+template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
+[[nodiscard]] Cursor<MemoryReader> read_value_impl(
+  RemoteAddr<Desc, address_t<MemoryReader>>,
+  address_t<MemoryReader> address,
+  const MemoryReader& reader,
+  Tracer& tracer,
+  // RemoteValue<Desc, AddrT>
+  native_type_t<RemoteAddr<Desc, address_t<MemoryReader>>>& out
+) {
+  out.address = address;
+  return try_advance(
+    address, byte_size<Desc, address_t<MemoryReader>>(), tracer
+  );
 }
 
 template <

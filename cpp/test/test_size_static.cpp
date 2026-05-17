@@ -14,11 +14,14 @@ static_assert(byte_size<UInt32, uint32_t>() == 4);
 static_assert(byte_size<UInt64, uint32_t>() == 8);
 static_assert(byte_size<Float, uint32_t>() == 4);
 static_assert(byte_size<Double, uint32_t>() == 8);
+static_assert(byte_size<RemoteAddr<Int16, uint32_t>, uint32_t>() == 2);
+static_assert(byte_size<RemoteAddr<Int64, uint32_t>, uint32_t>() == 8);
 
 static_assert(byte_size<Bounded<Int32, -10, 10>, uint32_t>() == 4);
 
 static_assert(byte_size<ZString<16>, uint32_t>() == 16);
 static_assert(byte_size<ZString<256>, uint32_t>() == 256);
+static_assert(byte_size<RemoteAddr<ZString<256>, uint32_t>, uint32_t>() == 256);
 
 static_assert(byte_size<RawAddr<uint32_t>, uint32_t>() == 4);
 static_assert(byte_size<RawAddr<uint64_t>, uint64_t>() == 8);
@@ -98,11 +101,25 @@ struct Outer {
 
 using TInner
   = Struct<Inner, Fields<Field<Int32, &Inner::a>, Field<Int32, &Inner::b>>>;
+
 using TOuter = Struct<
   Outer,
   Fields<Field<TInner, &Outer::inner>, Field<Int32, &Outer::c>>>;
 
 static_assert(byte_size<TInner, uint32_t>() == 8);
 static_assert(byte_size<TOuter, uint32_t>() == 12);
+
+struct Outer2 {
+  RemoteValue<TInner, uint32_t> inner;
+  int32_t c;
+};
+
+using TOuter2 = Struct<
+  Outer,
+  Fields<
+    Field<RemoteAddr<TInner, uint32_t>, &Outer2::inner>,
+    Field<Int32, &Outer2::c>>>;
+
+static_assert(byte_size<TOuter2, uint32_t>() == 12);
 
 int main() { return 0; }

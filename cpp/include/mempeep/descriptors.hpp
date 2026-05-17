@@ -11,6 +11,7 @@
 #include <mempeep/detail/concepts/primitive.hpp>
 #include <mempeep/detail/fields_items.hpp>
 #include <mempeep/detail/member_traits.hpp>
+#include <mempeep/detail/remote_value.hpp>
 #include <optional>  // std::optional
 #include <string>    // std::string
 #include <vector>    // std::vector
@@ -38,6 +39,37 @@ using UInt32 = Primitive<uint32_t>;
 using UInt64 = Primitive<uint64_t>;
 using Float = Primitive<float>;
 using Double = Primitive<double>;
+
+/**
+ * @brief Stores the remote address of a value without reading it.
+ *
+ * When encountered during a read, records the current remote address
+ * and advances the cursor past the region occupied by
+ * @p Desc, without performing any memory read. The value can be read later.
+ *
+ * This is useful when only some values in a large structure are needed, or
+ * when values need to be read in a different order than they appear in memory.
+ *
+ * @par Example
+ * @code
+ * struct Foo {
+ *   uint32_t flags;
+ *   RemoteValue<TData, uint32_t> remote_data;  // to be read later if needed
+ * };
+ *
+ * using TFoo = Struct<Foo, Fields
+ *   Field<UInt32, &Foo::flags>,
+ *   Field<RemoteAddr<TData, uint32_t>, &Foo::remote_data>>>;
+ * @endcode
+ *
+ * @tparam Desc  Descriptor of the value.
+ *               Determines how many bytes the cursor advances.
+ * @tparam AddrT Address type. Must match the reader's address type.
+ */
+template <IsDescriptor Desc, IsAddress AddrT>
+struct RemoteAddr {
+  using native_type = RemoteValue<Desc, AddrT>;
+};
 
 /**
  * @brief Reads an address without following it.
