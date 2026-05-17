@@ -313,10 +313,7 @@ template <
   std::size_t MaxLen,
   IsMemoryReader MemoryReader,
   IsTracer Tracer>
-  requires(
-    std::numeric_limits<address_t<MemoryReader>>::max()
-    <= std::numeric_limits<member_type_t<Next>>::max()
-  )
+  requires std::same_as<address_t<MemoryReader>, member_type_t<Next>>
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
   List<Desc, Next, Kind, MaxLen>,
   address_t<MemoryReader> address,
@@ -339,7 +336,7 @@ template <
     auto cursor = read_value<Desc>(*list_cursor, reader, tracer, elem);
     tracer.end_element();
     if (!cursor) return cursor;
-    const auto next_addr = static_cast<address_t<MemoryReader>>(elem.*Next);
+    const auto next_addr = elem.*Next;
     if (next_addr == 0) {
       if constexpr (Kind != ListKind::NULL_TERMINATED)
         tracer.error(Error::LIST_UNEXPECTED_NULL);
