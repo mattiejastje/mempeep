@@ -20,8 +20,6 @@ static_assert(byte_size<Bounded<Int32, -10, 10>, uint32_t>() == 4);
 static_assert(byte_size<ZString<16>, uint32_t>() == 16);
 static_assert(byte_size<ZString<256>, uint32_t>() == 256);
 
-static_assert(byte_size<RawAddr<uint8_t>, uint32_t>() == 4);
-static_assert(byte_size<RawAddr<uint16_t>, uint32_t>() == 4);
 static_assert(byte_size<RawAddr<uint32_t>, uint32_t>() == 4);
 static_assert(byte_size<RawAddr<uint64_t>, uint64_t>() == 8);
 

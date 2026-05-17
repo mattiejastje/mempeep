@@ -24,7 +24,7 @@ struct Player {
   uint8_t health;
   Pos pos;
   uint8_t target_ptr;
-  uint16_t shop_ptr;  // wider than needed, must also work
+  uint8_t shop_ptr;
   uint8_t weapon_ptr;
   Pos prev_pos;
   std::optional<Pos> tagged_pos;
@@ -40,7 +40,7 @@ using TPlayer = Struct<
     Skip<1>,
     Field<TPos, &Player::pos>,
     Field<RawAddr<uint8_t>, &Player::target_ptr>,
-    Field<RawAddr<uint16_t>, &Player::shop_ptr>,
+    Field<RawAddr<uint8_t>, &Player::shop_ptr>,
     Field<RawAddr<uint8_t>, &Player::weapon_ptr>,
     Field<Ref<TPos>, &Player::prev_pos>,
     Field<NullableRef<TPos>, &Player::tagged_pos>,

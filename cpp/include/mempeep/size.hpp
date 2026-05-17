@@ -25,10 +25,8 @@ consteval std::size_t byte_size_impl(ZString<MaxLen>, AddrT) noexcept {
   return MaxLen;
 }
 
-template <IsAddress NativeAddrT, IsAddress AddrT>
-consteval std::size_t byte_size_impl(RawAddr<NativeAddrT>, AddrT) noexcept {
-  // we are calculating the remote size
-  // so must use memory reader's address type AddrT
+template <IsAddress AddrT>
+consteval std::size_t byte_size_impl(RawAddr<AddrT>, AddrT) noexcept {
   return sizeof(AddrT);
 }
 
