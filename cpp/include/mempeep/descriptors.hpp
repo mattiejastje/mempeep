@@ -45,12 +45,13 @@ using Double = Primitive<double>;
  * Reads sizeof(reader's address type) bytes and stores the raw address
  * value as `AddrT`. No indirection is performed.
  *
- * @tparam AddrT The type to store the address in. Must satisfy IsAddress
- *               and be wide enough to hold the reader's address type.
+ * @tparam NativeAddrT The type to store the address in.
+ *                     Must satisfy IsAddress and be wide enough
+ *                     to hold the reader's address type.
  */
-template <IsAddress AddrT>
+template <IsAddress NativeAddrT>
 struct RawAddr {
-  using native_type = AddrT;
+  using native_type = NativeAddrT;
 };
 
 /**

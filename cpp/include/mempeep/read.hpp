@@ -174,23 +174,23 @@ template <IsFieldsItem FieldsItem, IsMemoryReader MemoryReader, IsTracer Tracer>
 // read_value_impl are the dispatch implementations for read_value
 // dispatch happens on first argument
 
-template <IsAddress AddrT, IsMemoryReader MemoryReader, IsTracer Tracer>
+template <IsAddress NativeAddrT, IsMemoryReader MemoryReader, IsTracer Tracer>
   requires(
     std::numeric_limits<address_t<MemoryReader>>::max()
-    <= std::numeric_limits<AddrT>::max()
+    <= std::numeric_limits<NativeAddrT>::max()
   )
 [[nodiscard]] Cursor<MemoryReader> read_value_impl(
-  RawAddr<AddrT>,
+  RawAddr<NativeAddrT>,
   address_t<MemoryReader> address,
   const MemoryReader& reader,
   Tracer& tracer,
-  native_type_t<RawAddr<AddrT>>& out  // AddrT
+  native_type_t<RawAddr<NativeAddrT>>& out  // NativeAddrT
 ) {
   address_t<MemoryReader> raw{};
   auto cursor = read_value<Primitive<address_t<MemoryReader>>>(
     address, reader, tracer, raw
   );
-  if (cursor) out = static_cast<AddrT>(raw);
+  if (cursor) out = static_cast<NativeAddrT>(raw);
   return cursor;
 }
 
