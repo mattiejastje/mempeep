@@ -15,31 +15,35 @@ local primitive_compatible_size_impl = {}
 --- Check if descriptor can be represented by a C++ Primitive.
 -- If so, returns its size, otherwise returns nil.
 -- Basically checks if it has a flat layout.
-local primitive_compatible_size = function(desc)
+local primitive_compatible_size = function(desc, addr_size)
   local impl = primitive_compatible_size_impl[desc.tag]
   if not impl then
     return nil
   end
-  return impl(desc)
+  return impl(desc, addr_size)
 end
 
-primitive_compatible_size_impl.Primitive = function(desc)
+primitive_compatible_size_impl.Primitive = function(desc, addr_size)
   return string.packsize(desc.fmt)
 end
 
-primitive_compatible_size_impl.Bounded = function(desc)
-  return primitive_compatible_size(desc.desc)
+primitive_compatible_size_impl.Bounded = function(desc, addr_size)
+  return primitive_compatible_size(desc.desc, addr_size)
 end
 
-primitive_compatible_size_impl.Array = function(desc)
-  local elem_size = primitive_compatible_size(desc.desc)
+primitive_compatible_size_impl.Array = function(desc, addr_size)
+  local elem_size = primitive_compatible_size(desc.desc, addr_size)
   if not elem_size then
     return nil
   end
   return desc.n * elem_size
 end
 
-primitive_compatible_size_impl.Struct = function(desc)
+primitive_compatible_size_impl.RawAddr = function(desc, addr_size)
+  return addr_size
+end
+
+primitive_compatible_size_impl.Struct = function(desc, addr_size)
   local offset = 0
   for _, item in ipairs(desc.fields) do
     if item.tag == "Skip" then
@@ -47,7 +51,7 @@ primitive_compatible_size_impl.Struct = function(desc)
     elseif item.tag == "Seek" then
       return nil
     elseif item.tag == "Field" then
-      local field_size = primitive_compatible_size(item.desc)
+      local field_size = primitive_compatible_size(item.desc, addr_size)
       if not field_size then
         return nil
       end
@@ -240,7 +244,7 @@ native_ctype_impl.Array = function(desc, addr_size, namespace)
 end
 
 mempeep_ctype_impl.Array = function(desc, addr_size, namespace)
-  if primitive_compatible_size(desc) then
+  if primitive_compatible_size(desc, addr_size) then
     return "Primitive<" .. M.native_ctype(desc, addr_size, namespace) .. ">"
   else
     return namespace
@@ -316,7 +320,7 @@ native_ctype_impl.Struct = function(desc, addr_size, namespace)
 end
 
 mempeep_ctype_impl.Struct = function(desc, addr_size, namespace)
-  if primitive_compatible_size(desc) then
+  if primitive_compatible_size(desc, addr_size) then
     return namespace .. "Primitive<" .. desc.name .. ">"
   else
     return "T" .. desc.name
@@ -349,7 +353,7 @@ end
 local native_struct_cdecl_1 = function(desc, addr_size, namespace, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   out:write(string.format("struct %s {\n", desc.name))
-  if primitive_compatible_size(desc) then
+  if primitive_compatible_size(desc, addr_size) then
     local offset = 0
     local pad_index = 0
     for _, item in ipairs(desc.fields) do
@@ -360,7 +364,7 @@ local native_struct_cdecl_1 = function(desc, addr_size, namespace, out)
       elseif item.tag == "Seek" then
         error("primitive compatible struct cannot have Seek")
       elseif item.tag == "Field" then
-        local field_size = primitive_compatible_size(item.desc)
+        local field_size = primitive_compatible_size(item.desc, addr_size)
         assert(field_size ~= nil)
         local field_native_ctype = M.native_ctype(item.desc, addr_size, namespace)
         out:write(string.format("  %s %s;\n", field_native_ctype, item.key))
@@ -380,7 +384,7 @@ end
 
 local native_struct_cdecl_2 = function(desc, addr_size, namespace, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
-  if primitive_compatible_size(desc) then
+  if primitive_compatible_size(desc, addr_size) then
     return
   end
   out:write("using T" .. desc.name .. " = " .. namespace .. "Struct<\n")
