@@ -6,6 +6,7 @@ local M = {}
 -- Valid descriptor tags.
 local descriptor_tags = {
   Primitive = true,
+  RemoteAddr = true,
   RawAddr = true,
   Ref = true,
   NullableRef = true,
@@ -145,6 +146,15 @@ M.UInt64 = M.Primitive("I8")
 M.Float = M.Primitive("f")
 M.Double = M.Primitive("d")
 
+--- Read an address-sized integer without following it; record for later use.
+-- Produces a RemoteValue {desc, address} that can be passed to read.read()
+-- to perform the actual read later.
+-- @param desc descriptor for the value that lives at the stored address
+-- @return RemoteAddr descriptor
+function M.RemoteAddr(desc)
+  return { tag = "RemoteAddr", desc = M.assert_descriptor(desc) }
+end
+
 --- Read an address-sized integer without following it.
 -- @return RawAddr descriptor
 function M.RawAddr()
@@ -275,6 +285,16 @@ end
 -- @return Seek fields item
 function M.Seek(n)
   return { tag = "Seek", n = M.assert_int(n) }
+end
+
+--- Construct a descriptor/address pair to pass to read.read().
+-- @param desc descriptor controlling how the value is read
+-- @param address integer remote address to read from
+-- @return table {desc, address}
+function M.remote_value(desc, address)
+  M.assert_descriptor(desc)
+  M.assert_count(address)
+  return { desc = desc, address = address }
 end
 
 return M

@@ -1,6 +1,7 @@
 --- Reading values from remote memory using descriptors.
 
 local errors = require("mempeep.errors")
+local s = require("mempeep.size")
 
 local M = {}
 
@@ -51,6 +52,12 @@ read_value_impl.Primitive = function(desc, address, reader, tracer)
   end
   local value = desc.fmt:unpack(bytes)
   tracer:value(value)
+  return advance(address, size, reader, tracer), value
+end
+
+read_value_impl.RemoteAddr = function(desc, address, reader, tracer)
+  local size = s.byte_size(desc.desc, reader.fmt)
+  local value = { desc = desc.desc, address = address }
   return advance(address, size, reader, tracer), value
 end
 
@@ -328,13 +335,12 @@ end
 --   begin_desc(self, address, desc)    called before each descriptor read
 --   end_desc(self)                     called after each descriptor read
 --
--- @param desc table descriptor controlling how the value is read
--- @param address integer remote address to read from
+-- @param remote_value table { desc, address }
 -- @param reader table { fmt: string, read(self, address, size) -> string|nil }
 -- @param tracer table (see above)
 -- @return any, boolean decoded value and tracer:success()
-function M.read(desc, address, reader, tracer)
-  local _, value = read_value(desc, address, reader, tracer)
+function M.read(remote_value, reader, tracer)
+  local _, value = read_value(remote_value.desc, remote_value.address, reader, tracer)
   return value, tracer:success()
 end
 

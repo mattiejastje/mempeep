@@ -33,7 +33,7 @@ do
 [00000008] .c = 0x21
 ]])
   local tracer = log_tracer.new(log_tracer.on_entry_write(out), log_tracer.log_level.VALUES)
-  local v, ok = read.read(Outer, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(Outer, 0), reader, tracer)
   assert(ok)
   assert(v)
   assert(v.inner.a == 11)

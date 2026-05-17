@@ -10,7 +10,7 @@ local ok_tracer = require("mempeep.tracers.ok_tracer")
 do
   local reader = memory.mock_memory_reader("I4", "\x44\x33\x22\x11")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Int32, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Int32, 0), reader, tracer)
   assert(ok)
   assert(v == 0x11223344)
 end
@@ -19,7 +19,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\xFF\xFF\x44\x33\x22\x11\xFF\xFF")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Int32, 2, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Int32, 2), reader, tracer)
   assert(ok)
   assert(v == 0x11223344)
 end
@@ -28,7 +28,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\xFF")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Int8, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Int8, 0), reader, tracer)
   assert(ok)
   assert(v == -1)
 end
@@ -37,7 +37,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\xE8\x03")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Int16, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Int16, 0), reader, tracer)
   assert(ok)
   assert(v == 1000)
 end
@@ -46,7 +46,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\x15\xCD\x5B\x07\x00\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Int64, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Int64, 0), reader, tracer)
   assert(ok)
   assert(v == 123456789)
 end
@@ -55,7 +55,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Int32, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Int32, 0), reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
@@ -69,7 +69,7 @@ do
   local Point = d.Struct("Point", { d.Field(d.Int32, "x"), d.Field(d.Int32, "y") })
   local reader = memory.mock_memory_reader("I4", "\x0A\x00\x00\x00\x14\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Point, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(Point, 0), reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(v.x == 10)
@@ -81,7 +81,7 @@ do
   local Skipped = d.Struct("Skipped", { d.Field(d.Int32, "a"), d.Skip(4), d.Field(d.Int32, "b") })
   local reader = memory.mock_memory_reader("I4", "\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Skipped, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(Skipped, 0), reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(v.a == 1)
@@ -93,7 +93,7 @@ do
   local Sparse = d.Struct("Sparse", { d.Field(d.Int32, "a"), d.Seek(8), d.Field(d.Int32, "b") })
   local reader = memory.mock_memory_reader("I4", "\x07\x00\x00\x00\x00\x00\x00\x00\x63\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Sparse, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(Sparse, 0), reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(v.a == 7)
@@ -108,7 +108,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\x0A\x00\x00\x00\x14\x00\x00\x00\x1E\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Array(d.Int32, 3), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Array(d.Int32, 3), 0), reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(#v == 3)
@@ -122,7 +122,7 @@ do
   local Point = d.Struct("Point", { d.Field(d.Int16, "x"), d.Field(d.Int16, "y") })
   local reader = memory.mock_memory_reader("I4", "\x01\x00\x02\x00\x03\x00\x04\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Array(Point, 2), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Array(Point, 2), 0), reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(#v == 2)
@@ -147,7 +147,7 @@ do
       .. "\x2C\x01\x00\x00" -- [2] = 300
   )
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Vector(d.Int32, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Vector(d.Int32, 0x1000), 0), reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(#v == 3)
@@ -160,7 +160,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\x08\x00\x00\x00" .. "\x08\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Vector(d.Int32, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Vector(d.Int32, 0x1000), 0), reader, tracer)
   assert(ok)
   assert(v ~= nil)
   assert(#v == 0)
@@ -170,7 +170,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "\x10\x00\x00\x00" .. "\x08\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Vector(d.Int32, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Vector(d.Int32, 0x1000), 0), reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
@@ -179,7 +179,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.Vector(d.Int32, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.Vector(d.Int32, 0x1000), 0), reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
@@ -201,7 +201,7 @@ do
       .. "\x03\x00\x00\x00\x00\x00\x00\x00" -- C: value=3, next=0
   )
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.List(Node, "next", d.list_kind.NULL_TERMINATED, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.List(Node, "next", d.list_kind.NULL_TERMINATED, 0x1000), 0), reader, tracer)
   assert(ok)
   assert(v)
   assert(#v == 3)
@@ -227,7 +227,7 @@ do
       .. "\x03\x00\x00\x00\x04\x00\x00\x00" -- C: value=3, next=4
   )
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0), reader, tracer)
   assert(ok)
   assert(v)
   assert(#v == 3)
@@ -241,7 +241,7 @@ do
   local Node = d.Struct("Node", { d.Field(d.Int32, "value"), d.Field(d.RawAddr(), "next") })
   local reader = memory.mock_memory_reader("I4", "\x00\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0), reader, tracer)
   assert(ok)
   assert(v)
   assert(#v == 0)
@@ -252,7 +252,7 @@ do
   local Node = d.Struct("Node", { d.Field(d.Int32, "value"), d.Field(d.RawAddr(), "next") })
   local reader = memory.mock_memory_reader("I4", "")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.List(Node, "next", d.list_kind.CIRCULAR, 0x1000), 0), reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
@@ -271,7 +271,7 @@ do
       .. "\x21\x00\x00\x00" -- c = 33
   )
   local tracer = ok_tracer.new()
-  local v, ok = read.read(Outer, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(Outer, 0), reader, tracer)
   assert(ok)
   assert(v)
   assert(v.inner.a == 11)
@@ -287,7 +287,7 @@ end
 do
   local reader = memory.mock_memory_reader("I1", "hello\0world")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.ZString(11), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.ZString(11), 0), reader, tracer)
   assert(ok)
   assert(v == "hello")
 end
@@ -296,7 +296,7 @@ end
 do
   local reader = memory.mock_memory_reader("I1", "abcdefg\0")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.ZString(4), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.ZString(4), 0), reader, tracer)
   assert(not ok)
   assert(v == "abcd")
 end
@@ -305,7 +305,7 @@ end
 do
   local reader = memory.mock_memory_reader("I1", "\0abc")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.ZString(4), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.ZString(4), 0), reader, tracer)
   assert(ok)
   assert(v == "")
 end
@@ -314,7 +314,7 @@ end
 do
   local reader = memory.mock_memory_reader("I1", "\xFF\xFFhi\0")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.ZString(3), 2, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.ZString(3), 2), reader, tracer)
   assert(ok)
   assert(v == "hi")
 end
@@ -323,7 +323,7 @@ end
 do
   local reader = memory.mock_memory_reader("I4", "")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(d.ZString(4), 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(d.ZString(4), 0), reader, tracer)
   assert(not ok)
   assert(v == nil)
 end
@@ -333,8 +333,52 @@ do
   local S = d.Struct("S", { d.Field(d.ZString(4), "name"), d.Field(d.Int32, "value") })
   local reader = memory.mock_memory_reader("I4", "hi\0\0\x2A\x00\x00\x00")
   local tracer = ok_tracer.new()
-  local v, ok = read.read(S, 0, reader, tracer)
+  local v, ok = read.read(d.remote_value(S, 0), reader, tracer)
   assert(ok)
   assert(v.name == "hi")
   assert(v.value == 42)
+end
+
+-- RemoteAddr: deferred read of an integer
+do
+  local reader = memory.mock_memory_reader("I1", "\x00\x00\x44\x33\x22\x11")
+  local tracer = ok_tracer.new()
+  local rv, ok = read.read(d.remote_value(d.RemoteAddr(d.Int32), 2), reader, tracer)
+  assert(ok)
+  assert(rv.address == 2)
+  local tracer2 = ok_tracer.new()
+  local value, ok2 = read.read(rv, reader, tracer2)
+  assert(ok2)
+  assert(value == 0x11223344)
+end
+
+-- RemoteAddr: deferred read of ZString
+do
+  local reader = memory.mock_memory_reader("I1", "hello\0world")
+  local tracer = ok_tracer.new()
+  local rv, ok = read.read(d.remote_value(d.RemoteAddr(d.ZString(6)), 0), reader, tracer)
+  assert(ok)
+  assert(rv.address == 0)
+  local tracer2 = ok_tracer.new()
+  local value, ok2 = read.read(rv, reader, tracer2)
+  assert(ok2)
+  assert(value == "hello")
+end
+
+-- RemoteAddr: inside struct, cursor advances past descriptor bytes
+do
+  local S = d.Struct("S", {
+    d.Field(d.RemoteAddr(d.Int32), "data"),
+    d.Field(d.Int16, "after"),
+  })
+  local reader = memory.mock_memory_reader("I1", "\x44\x33\x22\x11\x77\x66")
+  local tracer = ok_tracer.new()
+  local s, ok = read.read(d.remote_value(S, 0), reader, tracer)
+  assert(ok)
+  assert(s.data.address == 0)
+  assert(s.after == 0x6677)
+  local tracer2 = ok_tracer.new()
+  local data, ok2 = read.read(s.data, reader, tracer2)
+  assert(ok2)
+  assert(data == 0x11223344)
 end
