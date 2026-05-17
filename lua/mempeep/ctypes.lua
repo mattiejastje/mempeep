@@ -158,7 +158,7 @@ end
 
 native_ctype_impl.RemoteAddr = function(desc, addr_size, namespace)
   addr_ctype = addr_size_to_ctype(addr_size)
-  return namespace .. "RemoteValue<" .. M.native_ctype(desc.desc, addr_size, namespace) .. ", " .. addr_ctype .. ">"
+  return namespace .. "RemoteValue<" .. M.mempeep_ctype(desc.desc, addr_size, namespace) .. ", " .. addr_ctype .. ">"
 end
 
 mempeep_ctype_impl.RemoteAddr = function(desc, addr_size, namespace)
