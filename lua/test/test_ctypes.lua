@@ -141,7 +141,7 @@ using TPoints = Struct<
   Fields<
     Field<Vector<Primitive<Point>, 0x1000>, &Points::points>>>;
 ]])
-  c.native_struct_cdecls({ Points }, "", out2)
+  c.native_struct_cdecls({ Points }, 4, "", out2)
   out2:close()
 end
 
@@ -154,7 +154,7 @@ struct Flat {
   int16_t y;
 };
 ]])
-  c.native_struct_cdecls({ Flat }, "", out)
+  c.native_struct_cdecls({ Flat }, 4, "", out)
   out:close()
 end
 
@@ -169,7 +169,7 @@ struct Padded {
   uint8_t _pad1[0x2];
 };
 ]])
-  c.native_struct_cdecls({ Padded }, "", out)
+  c.native_struct_cdecls({ Padded }, 4, "", out)
   out:close()
 end
 
@@ -189,7 +189,7 @@ using TSparse = Struct<
     Field<Int16, &Sparse::y>,
     Skip<0x2>>>;
 ]])
-  c.native_struct_cdecls({ Sparse }, "", out)
+  c.native_struct_cdecls({ Sparse }, 4, "", out)
   out:close()
 end
 
@@ -201,7 +201,7 @@ struct Bounded {
   int32_t a;
 };
 ]])
-  c.native_struct_cdecls({ Bounded }, "", out)
+  c.native_struct_cdecls({ Bounded }, 4, "", out)
   out:close()
 end
 
@@ -213,7 +213,7 @@ struct WithArray {
   std::array<int16_t, 0x4> items;
 };
 ]])
-  c.native_struct_cdecls({ WithArray }, "", out)
+  c.native_struct_cdecls({ WithArray }, 4, "", out)
   out:close()
 end
 
@@ -232,7 +232,7 @@ using TWithPrimArray = Struct<
     Field<Ref<Int32>, &WithPrimArray::a>,
     Field<Primitive<std::array<int16_t, 0x4>>, &WithPrimArray::items>>>;
 ]])
-  c.native_struct_cdecls({ WithPrimArray }, "", out)
+  c.native_struct_cdecls({ WithPrimArray }, 4, "", out)
   out:close()
 end
 
@@ -250,7 +250,7 @@ struct Outer {
   int32_t c;
 };
 ]])
-  c.native_struct_cdecls({ Outer }, "", out)
+  c.native_struct_cdecls({ Outer }, 4, "", out)
   out:close()
 end
 
@@ -268,7 +268,7 @@ using TWithRef = Struct<
     Field<Int32, &WithRef::a>,
     Field<Ref<Int32>, &WithRef::b>>>;
 ]])
-  c.native_struct_cdecls({ WithRef }, "", out)
+  c.native_struct_cdecls({ WithRef }, 4, "", out)
   out:close()
 end
 
@@ -278,15 +278,15 @@ do
   local out = mock_out([[
 struct WithAddr {
   int32_t a;
-  uintptr_t ptr;
+  uint32_t ptr;
 };
 using TWithAddr = Struct<
   WithAddr,
   Fields<
     Field<Int32, &WithAddr::a>,
-    Field<RawAddr<uintptr_t>, &WithAddr::ptr>>>;
+    Field<RawAddr<uint32_t>, &WithAddr::ptr>>>;
 ]])
-  c.native_struct_cdecls({ WithAddr }, "", out)
+  c.native_struct_cdecls({ WithAddr }, 4, "", out)
   out:close()
 end
 
@@ -304,7 +304,7 @@ using TWithVec = Struct<
     Field<Int32, &WithVec::a>,
     Field<Vector<Int32, 0x1000>, &WithVec::items>>>;
 ]])
-  c.native_struct_cdecls({ WithVec }, "", out)
+  c.native_struct_cdecls({ WithVec }, 4, "", out)
   out:close()
 end
 
@@ -332,7 +332,7 @@ using TOuter = Struct<
     Field<TInner, &Outer::inner>,
     Field<Int32, &Outer::c>>>;
 ]])
-  c.native_struct_cdecls({ Outer }, "", out)
+  c.native_struct_cdecls({ Outer }, 4, "", out)
   out:close()
 end
 
@@ -345,14 +345,14 @@ do
   local out = mock_out([[
 struct WithRemoteAddr {
   int32_t a;
-  RemoteValue<int32_t, uint32_t> b;
+  RemoteValue<int32_t, uint16_t> b;
 };
 using TWithRemoteAddr = Struct<
   WithRemoteAddr,
   Fields<
     Field<Int32, &WithRemoteAddr::a>,
-    Field<RemoteAddr<Int32, uint32_t>, &WithRemoteAddr::b>>>;
+    Field<RemoteAddr<Int32, uint16_t>, &WithRemoteAddr::b>>>;
 ]])
-  c.native_struct_cdecls({ WithRemoteAddr }, "", out)
+  c.native_struct_cdecls({ WithRemoteAddr }, 2, "", out)
   out:close()
 end

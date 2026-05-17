@@ -67,18 +67,18 @@ end
 
 local native_ctype_impl = {}
 
-function M.native_ctype(desc)
+function M.native_ctype(desc, addr_size, namespace)
   local impl = native_ctype_impl[desc.tag]
   assert(impl, "unknown descriptor tag: " .. tostring(desc.tag))
-  return impl(desc)
+  return impl(desc, addr_size, namespace)
 end
 
 local mempeep_ctype_impl = {}
 
-function M.mempeep_ctype(desc, namespace)
+function M.mempeep_ctype(desc, addr_size, namespace)
   local impl = mempeep_ctype_impl[desc.tag]
   assert(impl, "unknown descriptor tag: " .. tostring(desc.tag))
-  return impl(desc, namespace)
+  return impl(desc, addr_size, namespace)
 end
 
 local fmt_to_ctype_impl = {}
@@ -118,17 +118,32 @@ fmt_to_prim_impl.I8 = "UInt64"
 fmt_to_prim_impl.f = "Float"
 fmt_to_prim_impl.d = "Double"
 
+local addr_size_to_ctype_impl = {
+  [1] = "uint8_t",
+  [2] = "uint16_t",
+  [4] = "uint32_t",
+  [8] = "uint64_t",
+}
+
+local addr_size_to_ctype = function(addr_size)
+  local typ = addr_size_to_ctype_impl[addr_size]
+  if typ then
+    return typ
+  end
+  error("unsupported address size " .. tostring(addr_size))
+end
+
 remote_ctype_impl.Primitive = function(desc, addr_size)
   assert(desc.fmt)
   return string.packsize(desc.fmt), fmt_to_ctype(desc.fmt)
 end
 
-native_ctype_impl.Primitive = function(desc)
+native_ctype_impl.Primitive = function(desc, addr_size, namespace)
   assert(desc.fmt)
   return fmt_to_ctype(desc.fmt)
 end
 
-mempeep_ctype_impl.Primitive = function(desc, namespace)
+mempeep_ctype_impl.Primitive = function(desc, addr_size, namespace)
   assert(desc.fmt)
   local prim = fmt_to_prim_impl[desc.fmt]
   if prim then
@@ -141,27 +156,26 @@ remote_ctype_impl.RemoteAddr = function(desc, addr_size)
   return M.remote_ctype(desc.desc, addr_size)
 end
 
--- TODO needs namespace
--- TODO needs addr_size, assuming uint32_t address type for now
-native_ctype_impl.RemoteAddr = function(desc)
-  return "RemoteValue<" .. M.native_ctype(desc.desc) .. ", uint32_t>"
+native_ctype_impl.RemoteAddr = function(desc, addr_size, namespace)
+  addr_ctype = addr_size_to_ctype(addr_size)
+  return namespace .. "RemoteValue<" .. M.native_ctype(desc.desc, addr_size, namespace) .. ", " .. addr_ctype .. ">"
 end
 
--- TODO needs addr_size, assuming uint32_t address type for now
-mempeep_ctype_impl.RemoteAddr = function(desc, namespace)
-  return namespace .. "RemoteAddr<" .. M.mempeep_ctype(desc.desc, namespace) .. ", uint32_t>"
+mempeep_ctype_impl.RemoteAddr = function(desc, addr_size, namespace)
+  addr_ctype = addr_size_to_ctype(addr_size)
+  return namespace .. "RemoteAddr<" .. M.mempeep_ctype(desc.desc, addr_size, namespace) .. ", " .. addr_ctype .. ">"
 end
 
 remote_ctype_impl.Bounded = function(desc, addr_size)
   return M.remote_ctype(desc.desc, addr_size)
 end
 
-native_ctype_impl.Bounded = function(desc)
-  return M.native_ctype(desc.desc)
+native_ctype_impl.Bounded = function(desc, addr_size, namespace)
+  return M.native_ctype(desc.desc, addr_size, namespace)
 end
 
-mempeep_ctype_impl.Bounded = function(desc, namespace)
-  local inner = M.mempeep_ctype(desc.desc, namespace)
+mempeep_ctype_impl.Bounded = function(desc, addr_size, namespace)
+  local inner = M.mempeep_ctype(desc.desc, addr_size, namespace)
   return string.format("%sBounded<%s, %d, %d>", namespace, inner, desc.min, desc.max)
 end
 
@@ -169,11 +183,11 @@ remote_ctype_impl.ZString = function(desc, addr_size)
   return addr_size, string.format("char[%d]", desc.max_len)
 end
 
-native_ctype_impl.ZString = function(desc)
+native_ctype_impl.ZString = function(desc, addr_size, namespace)
   return "std::string"
 end
 
-mempeep_ctype_impl.ZString = function(desc, namespace)
+mempeep_ctype_impl.ZString = function(desc, addr_size, namespace)
   return namespace .. "ZString<" .. hex_str(desc.max_len) .. ">"
 end
 
@@ -181,12 +195,12 @@ remote_ctype_impl.RawAddr = function(desc, addr_size)
   return addr_size, "void*"
 end
 
-native_ctype_impl.RawAddr = function(desc)
-  return "uintptr_t"
+native_ctype_impl.RawAddr = function(desc, addr_size, namespace)
+  return addr_size_to_ctype(addr_size)
 end
 
-mempeep_ctype_impl.RawAddr = function(desc, namespace)
-  return namespace .. "RawAddr<uintptr_t>"
+mempeep_ctype_impl.RawAddr = function(desc, addr_size, namespace)
+  return namespace .. "RawAddr<" .. addr_size_to_ctype(addr_size) .. ">"
 end
 
 remote_ctype_impl.Ref = function(desc, addr_size)
@@ -198,22 +212,22 @@ remote_ctype_impl.Ref = function(desc, addr_size)
   return addr_size, ref_ctype .. "*"
 end
 
-native_ctype_impl.Ref = function(desc)
-  return M.native_ctype(desc.desc)
+native_ctype_impl.Ref = function(desc, addr_size, namespace)
+  return M.native_ctype(desc.desc, addr_size, namespace)
 end
 
-mempeep_ctype_impl.Ref = function(desc, namespace)
-  return namespace .. "Ref<" .. M.mempeep_ctype(desc.desc, namespace) .. ">"
+mempeep_ctype_impl.Ref = function(desc, addr_size, namespace)
+  return namespace .. "Ref<" .. M.mempeep_ctype(desc.desc, addr_size, namespace) .. ">"
 end
 
 remote_ctype_impl.NullableRef = remote_ctype_impl.Ref
 
-native_ctype_impl.NullableRef = function(desc)
-  return "std::optional<" .. M.native_ctype(desc.desc) .. ">"
+native_ctype_impl.NullableRef = function(desc, addr_size, namespace)
+  return "std::optional<" .. M.native_ctype(desc.desc, addr_size, namespace) .. ">"
 end
 
-mempeep_ctype_impl.NullableRef = function(desc, namespace)
-  return namespace .. "NullableRef<" .. M.mempeep_ctype(desc.desc, namespace) .. ">"
+mempeep_ctype_impl.NullableRef = function(desc, addr_size, namespace)
+  return namespace .. "NullableRef<" .. M.mempeep_ctype(desc.desc, addr_size, namespace) .. ">"
 end
 
 remote_ctype_impl.Array = function(desc, addr_size)
@@ -221,17 +235,17 @@ remote_ctype_impl.Array = function(desc, addr_size)
   return desc.n * ref_size, "std::array<" .. ref_ctype .. ", " .. hex_str(desc.n) .. ">"
 end
 
-native_ctype_impl.Array = function(desc)
-  return "std::array<" .. M.native_ctype(desc.desc) .. ", " .. hex_str(desc.n) .. ">"
+native_ctype_impl.Array = function(desc, addr_size, namespace)
+  return "std::array<" .. M.native_ctype(desc.desc, addr_size, namespace) .. ", " .. hex_str(desc.n) .. ">"
 end
 
-mempeep_ctype_impl.Array = function(desc, namespace)
+mempeep_ctype_impl.Array = function(desc, addr_size, namespace)
   if primitive_compatible_size(desc) then
-    return "Primitive<" .. M.native_ctype(desc) .. ">"
+    return "Primitive<" .. M.native_ctype(desc, addr_size, namespace) .. ">"
   else
     return namespace
       .. "Array<"
-      .. M.mempeep_ctype(desc.desc, namespace)
+      .. M.mempeep_ctype(desc.desc, addr_size, namespace)
       .. ", "
       .. hex_str(desc.n)
       .. ">"
@@ -243,14 +257,14 @@ remote_ctype_impl.Vector = function(desc, addr_size)
   return 2 * addr_size, ref_ctype .. "*"
 end
 
-native_ctype_impl.Vector = function(desc)
-  return "std::vector<" .. M.native_ctype(desc.desc) .. ">"
+native_ctype_impl.Vector = function(desc, addr_size, namespace)
+  return "std::vector<" .. M.native_ctype(desc.desc, addr_size, namespace) .. ">"
 end
 
-mempeep_ctype_impl.Vector = function(desc, namespace)
+mempeep_ctype_impl.Vector = function(desc, addr_size, namespace)
   return namespace
     .. "Vector<"
-    .. M.mempeep_ctype(desc.desc, namespace)
+    .. M.mempeep_ctype(desc.desc, addr_size, namespace)
     .. ", "
     .. hex_str(desc.max_len)
     .. ">"
@@ -261,14 +275,14 @@ remote_ctype_impl.List = function(desc, addr_size)
   return addr_size, ref_ctype .. "*"
 end
 
-native_ctype_impl.List = function(desc)
-  return "std::vector<" .. M.native_ctype(desc.desc) .. ">"
+native_ctype_impl.List = function(desc, addr_size, namespace)
+  return "std::vector<" .. M.native_ctype(desc.desc, addr_size, namespace) .. ">"
 end
 
-mempeep_ctype_impl.List = function(desc, namespace)
+mempeep_ctype_impl.List = function(desc, addr_size, namespace)
   return namespace
     .. "List<"
-    .. M.mempeep_ctype(desc.desc, namespace)
+    .. M.mempeep_ctype(desc.desc, addr_size, namespace)
     .. ", &"
     .. desc.desc.name
     .. "::"
@@ -297,11 +311,11 @@ remote_ctype_impl.Struct = function(desc, addr_size)
   return size, desc.name
 end
 
-native_ctype_impl.Struct = function(desc)
+native_ctype_impl.Struct = function(desc, addr_size, namespace)
   return desc.name
 end
 
-mempeep_ctype_impl.Struct = function(desc, namespace)
+mempeep_ctype_impl.Struct = function(desc, addr_size, namespace)
   if primitive_compatible_size(desc) then
     return namespace .. "Primitive<" .. desc.name .. ">"
   else
@@ -332,7 +346,7 @@ function M.remote_struct_cdecl(desc, addr_size, out)
   out:write("};\n\n")
 end
 
-local native_struct_cdecl_1 = function(desc, out)
+local native_struct_cdecl_1 = function(desc, addr_size, namespace, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   out:write(string.format("struct %s {\n", desc.name))
   if primitive_compatible_size(desc) then
@@ -348,7 +362,7 @@ local native_struct_cdecl_1 = function(desc, out)
       elseif item.tag == "Field" then
         local field_size = primitive_compatible_size(item.desc)
         assert(field_size ~= nil)
-        local field_native_ctype = M.native_ctype(item.desc)
+        local field_native_ctype = M.native_ctype(item.desc, addr_size, namespace)
         out:write(string.format("  %s %s;\n", field_native_ctype, item.key))
         offset = offset + field_size
       end
@@ -356,7 +370,7 @@ local native_struct_cdecl_1 = function(desc, out)
   else
     for _, item in ipairs(desc.fields) do
       if item.tag == "Field" then
-        local field_ctype = M.native_ctype(item.desc)
+        local field_ctype = M.native_ctype(item.desc, addr_size, namespace)
         out:write(string.format("  %s %s;\n", field_ctype, item.key))
       end
     end
@@ -364,7 +378,7 @@ local native_struct_cdecl_1 = function(desc, out)
   out:write("};\n\n")
 end
 
-local native_struct_cdecl_2 = function(desc, namespace, out)
+local native_struct_cdecl_2 = function(desc, addr_size, namespace, out)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
   if primitive_compatible_size(desc) then
     return
@@ -380,15 +394,15 @@ local native_struct_cdecl_2 = function(desc, namespace, out)
     elseif item.tag == "Seek" then
       out:write(string.format("    %sSeek<%s>%s", namespace, hex_str(item.n), comma))
     elseif item.tag == "Field" then
-      local mtype = M.mempeep_ctype(item.desc, namespace)
+      local mtype = M.mempeep_ctype(item.desc, addr_size, namespace)
       out:write(string.format("    %sField<%s, &%s::%s>%s", namespace, mtype, desc.name, item.key, comma))
     end
   end
 end
 
-function M.native_struct_cdecl(desc, namespace, out)
-  native_struct_cdecl_1(desc, out)
-  native_struct_cdecl_2(desc, namespace, out)
+function M.native_struct_cdecl(desc, addr_size, namespace, out)
+  native_struct_cdecl_1(desc, addr_size, namespace, out)
+  native_struct_cdecl_2(desc, addr_size, namespace, out)
 end
 
 --- Collect all Struct descriptors reachable from `desc` in topological order
@@ -458,9 +472,9 @@ end
 -- order (dependencies before dependents), using the native C++ layout.
 -- @param descs descriptors to collect structs from
 -- @param out output stream
-function M.native_struct_cdecls(descs, namespace, out)
+function M.native_struct_cdecls(descs, addr_size, namespace, out)
   each_struct(descs, function(s)
-    M.native_struct_cdecl(s, namespace, out)
+    M.native_struct_cdecl(s, addr_size, namespace, out)
   end)
 end
 
@@ -474,6 +488,8 @@ local function walk_native_includes(desc, visited, includes)
     if desc.fmt ~= "f" and desc.fmt ~= "d" then
       includes["<cstdint>"] = true
     end
+  elseif desc.tag == "RemoteAddr" then
+    includes["<cstdint>"] = true
   elseif desc.tag == "RawAddr" then
     includes["<cstdint>"] = true
   elseif desc.tag == "Bounded" then
