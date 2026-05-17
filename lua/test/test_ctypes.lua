@@ -89,6 +89,12 @@ do
   assert(typ == "Node*")
 end
 
+do
+  local size, typ = c.remote_ctype(d.RemoteAddr(d.Int32), 8)
+  assert(size == 4)
+  assert(typ == "int32_t")
+end
+
 local mock_out = function(text)
   local lines = {}
   for line in text:gmatch("[^\n]+") do
@@ -327,5 +333,26 @@ using TOuter = Struct<
     Field<Int32, &Outer::c>>>;
 ]])
   c.native_struct_cdecls({ Outer }, "", out)
+  out:close()
+end
+
+-- native_struct_cdecls: Struct with RemoteAddr field
+do
+  local WithRemoteAddr = d.Struct("WithRemoteAddr", {
+    d.Field(d.Int32, "a"),
+    d.Field(d.RemoteAddr(d.Int32), "b"),
+  })
+  local out = mock_out([[
+struct WithRemoteAddr {
+  int32_t a;
+  RemoteValue<int32_t, uint32_t> b;
+};
+using TWithRemoteAddr = Struct<
+  WithRemoteAddr,
+  Fields<
+    Field<Int32, &WithRemoteAddr::a>,
+    Field<RemoteAddr<Int32, uint32_t>, &WithRemoteAddr::b>>>;
+]])
+  c.native_struct_cdecls({ WithRemoteAddr }, "", out)
   out:close()
 end

@@ -137,6 +137,21 @@ mempeep_ctype_impl.Primitive = function(desc, namespace)
   return namespace .. "Primitive<" .. fmt_to_ctype(desc.fmt) .. ">"
 end
 
+remote_ctype_impl.RemoteAddr = function(desc, addr_size)
+  return M.remote_ctype(desc.desc, addr_size)
+end
+
+-- TODO needs namespace
+-- TODO needs addr_size, assuming uint32_t address type for now
+native_ctype_impl.RemoteAddr = function(desc)
+  return "RemoteValue<" .. M.native_ctype(desc.desc) .. ", uint32_t>"
+end
+
+-- TODO needs addr_size, assuming uint32_t address type for now
+mempeep_ctype_impl.RemoteAddr = function(desc, namespace)
+  return namespace .. "RemoteAddr<" .. M.mempeep_ctype(desc.desc, namespace) .. ", uint32_t>"
+end
+
 remote_ctype_impl.Bounded = function(desc, addr_size)
   return M.remote_ctype(desc.desc, addr_size)
 end
@@ -391,6 +406,7 @@ local function collect_structs(desc, visited, order)
     or desc.tag == "Vector"
     or desc.tag == "List"
     or desc.tag == "Bounded"
+    or desc.tag == "RemoteAddr"
   then
     collect_structs(desc.desc, visited, order)
   elseif desc.tag == "Struct" then
