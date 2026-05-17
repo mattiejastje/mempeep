@@ -122,8 +122,8 @@ struct Vector {
 };
 
 enum class ListKind {
-    CIRCULAR,
-    NULL_TERMINATED,
+  CIRCULAR,
+  NULL_TERMINATED,
 };
 
 /**
@@ -133,10 +133,10 @@ enum class ListKind {
  * empty and no error is reported. Otherwise, nodes are read starting from
  * the head address using Desc, and traversal continues by following the
  * address stored in the `Next` field of each decoded node until that address
- * equals the head address (for circular lists) or null (for null terminated lists).
- * Reports `Error::CIRCULAR_LIST_TOO_LONG` if the
- * node count exceeds `MaxLen` before the list closes. The cursor advances
- * past the stored head address only, not past the nodes themselves.
+ * equals the head address (for circular lists) or null (for null terminated
+ * lists). Reports `Error::CIRCULAR_LIST_TOO_LONG` if the node count exceeds
+ * `MaxLen` before the list closes. The cursor advances past the stored head
+ * address only, not past the nodes themselves.
  *
  * @tparam Desc   Descriptor for each node. `native_type_t<Desc>` is the node
  *                type.
