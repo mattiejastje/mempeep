@@ -76,7 +76,8 @@ static void read_entity(const char (&data)[N]) {
   test::MockMemoryReader<uint8_t> reader{data};
   Entity e{};
   auto tracer = LogTracer{OnLogEntryPrint{std::cout}, LogLevel::VALUES};
-  const bool ok = mempeep::read<TEntity>(uint8_t{0}, reader, tracer, e);
+  const bool ok
+    = mempeep::read(RemoteValue<TEntity, uint8_t>{0}, reader, tracer, e);
   report(ok, e);
 }
 

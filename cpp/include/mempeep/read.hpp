@@ -7,6 +7,7 @@
 #include <mempeep/descriptors.hpp>
 #include <mempeep/detail/concepts/memory.hpp>
 #include <mempeep/detail/concepts/tracer.hpp>
+#include <mempeep/detail/remote_value.hpp>
 #include <optional>  // std::optional
 #include <utility>   // std::ignore
 
@@ -430,12 +431,13 @@ namespace mempeep {
  */
 template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
 [[nodiscard]] bool read(
-  address_t<MemoryReader> address,
+  RemoteValue<Desc, address_t<MemoryReader>> remote_value,
   const MemoryReader& reader,
   Tracer& tracer,
   native_type_t<Desc>& out
 ) {
-  std::ignore = detail::read_value<Desc>(address, reader, tracer, out);
+  std::ignore
+    = detail::read_value<Desc>(remote_value.address, reader, tracer, out);
   return static_cast<bool>(tracer.success());
 };
 

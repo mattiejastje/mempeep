@@ -18,11 +18,10 @@ using namespace mempeep;
 static constexpr std::array<uint8_t, 0> empty_data{};
 
 TEST_CASE("successful read") {
-  static constexpr uint8_t base{4};
   auto reader = test::MockMemoryReader<uint8_t>{test::game_data};
   test::Game game{};
   auto tracer = LogTracer{OnLogEntryPrint{std::cout}, LogLevel::VALUES};
-  CHECK(read<test::TGame>(base, reader, tracer, game));
+  CHECK(read(RemoteValue<test::TGame, uint8_t>{4}, reader, tracer, game));
   SUBCASE("level") { CHECK_EQ(game.level, 17); }
   SUBCASE("player") {
     CHECK_EQ(game.player.health, 123);
@@ -69,16 +68,15 @@ TEST_CASE("failed read: complete failure") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   test::Game game{};
   OkTracer tracer{};
-  CHECK(!read<test::TGame>(0, reader, tracer, game));
+  CHECK(!read(RemoteValue<test::TGame, uint8_t>{0}, reader, tracer, game));
 }
 
 TEST_CASE("failed read: invalid addresses") {
-  static constexpr uint8_t base{4};
   static constexpr std::string_view data{test::game_data, 23};
   auto reader = test::MockMemoryReader<uint8_t>{data};
   test::Game game{};
   OkTracer tracer{};
-  CHECK(!read<test::TGame>(base, reader, tracer, game));
+  CHECK(!read(RemoteValue<test::TGame, uint8_t>{4}, reader, tracer, game));
   SUBCASE("level") { CHECK_EQ(game.level, 17); }
   SUBCASE("player") {
     CHECK_EQ(game.player.health, 123);
@@ -106,7 +104,7 @@ TEST_CASE("failed read: skip overflow") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Overflow overflow{};
   OkTracer tracer{};
-  CHECK(!read<TOverflow>(0, reader, tracer, overflow));
+  CHECK(!read(RemoteValue<TOverflow, uint8_t>{0}, reader, tracer, overflow));
 }
 
 TEST_CASE("failed read: null ref") {
@@ -118,7 +116,7 @@ TEST_CASE("failed read: null ref") {
   auto reader = test::MockMemoryReader<uint8_t>{"\x00"};
   Obj obj{};
   OkTracer tracer{};
-  CHECK(!read<TObj>(0, reader, tracer, obj));
+  CHECK(!read(RemoteValue<TObj, uint8_t>{0}, reader, tracer, obj));
 }
 
 TEST_CASE("failed read: missing ref") {
@@ -130,7 +128,7 @@ TEST_CASE("failed read: missing ref") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Obj obj{};
   OkTracer tracer{};
-  CHECK(!read<TObj>(0, reader, tracer, obj));
+  CHECK(!read(RemoteValue<TObj, uint8_t>{0}, reader, tracer, obj));
 }
 
 TEST_CASE("failed read: missing nullable ref") {
@@ -142,14 +140,14 @@ TEST_CASE("failed read: missing nullable ref") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   Obj obj{};
   OkTracer tracer{};
-  CHECK(!read<TObj>(0, reader, tracer, obj));
+  CHECK(!read(RemoteValue<TObj, uint8_t>{0}, reader, tracer, obj));
 }
 
 TEST_CASE("ZString: null terminator before max_len") {
   auto reader = test::MockMemoryReader<uint8_t>{"hello\0world"};
   std::string out{};
   OkTracer tracer{};
-  CHECK(read<ZString<11>>(0, reader, tracer, out));
+  CHECK(read(RemoteValue<ZString<11>, uint8_t>{0}, reader, tracer, out));
   CHECK_EQ(out, "hello");
 }
 
@@ -157,7 +155,7 @@ TEST_CASE("ZString: no null terminator") {
   auto reader = test::MockMemoryReader<uint8_t>{"abcdefg\0"};
   std::string out{};
   OkTracer tracer{};
-  CHECK(!read<ZString<4>>(0, reader, tracer, out));
+  CHECK(!read(RemoteValue<ZString<4>, uint8_t>{0}, reader, tracer, out));
   CHECK_EQ(out, "abcd");
 }
 
@@ -165,7 +163,7 @@ TEST_CASE("ZString: null at position 0") {
   auto reader = test::MockMemoryReader<uint8_t>{"\0abc"};
   std::string out{};
   OkTracer tracer{};
-  CHECK(read<ZString<4>>(0, reader, tracer, out));
+  CHECK(read(RemoteValue<ZString<4>, uint8_t>{0}, reader, tracer, out));
   CHECK_EQ(out, "");
 }
 
@@ -173,7 +171,7 @@ TEST_CASE("ZString: unreadable address") {
   auto reader = test::MockMemoryReader<uint8_t>{empty_data};
   std::string out{};
   OkTracer tracer{};
-  CHECK(!read<ZString<4>>(0, reader, tracer, out));
+  CHECK(!read(RemoteValue<ZString<4>, uint8_t>{0}, reader, tracer, out));
 }
 
 TEST_CASE("ZString: inside struct, cursor lands after string") {
@@ -187,7 +185,7 @@ TEST_CASE("ZString: inside struct, cursor lands after string") {
   auto reader = test::MockMemoryReader<uint32_t>{"hi\0\0\x2A\x00\x00\x00"};
   S s{};
   OkTracer tracer{};
-  CHECK(read<TS>(0, reader, tracer, s));
+  CHECK(read(RemoteValue<TS, uint32_t>{0}, reader, tracer, s));
   CHECK_EQ(s.name, "hi");
   CHECK_EQ(s.value, 42);
 }

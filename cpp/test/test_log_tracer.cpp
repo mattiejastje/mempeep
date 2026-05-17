@@ -31,7 +31,7 @@ TEST_CASE("simple") {
   Outer outer{};
   std::stringstream out;
   auto tracer = LogTracer{OnLogEntryPrint{out}, LogLevel::VALUES};
-  CHECK(read<TOuter>(0, reader, tracer, outer));
+  CHECK(read(RemoteValue<TOuter, uint8_t>{0}, reader, tracer, outer));
   CHECK_EQ(out.str(), R"([00000000] .inner.a = 0xb
 [00000004] .inner.b = 0x16
 [00000008] .c = 0x21
