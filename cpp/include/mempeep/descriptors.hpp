@@ -42,11 +42,10 @@ using Double = Primitive<double>;
 /**
  * @brief Reads an address without following it.
  *
- * Reads sizeof(reader's address type) bytes and stores the raw address
- * value as @p AddrT. No indirection is performed.
+ * Reads and stores the raw address value as @p AddrT.
+ * No indirection is performed.
  *
- * @tparam AddrT The type to store the address in.
- *               Must satisfy IsAddress and match the reader's address type.
+ * @tparam AddrT Address type. Must match the reader's address type.
  */
 template <IsAddress AddrT>
 struct RawAddr {
