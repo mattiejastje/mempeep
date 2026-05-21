@@ -184,7 +184,7 @@ mempeep_ctype_impl.Bounded = function(desc, addr_size, namespace)
 end
 
 remote_ctype_impl.ZString = function(desc, addr_size)
-  return addr_size, string.format("char[%d]", desc.max_len)
+  return desc.max_len, string.format("char[%d]", desc.max_len)
 end
 
 native_ctype_impl.ZString = function(desc, addr_size, namespace)
