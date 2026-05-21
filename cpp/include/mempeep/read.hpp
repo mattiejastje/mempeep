@@ -470,4 +470,23 @@ template <IsDescriptor Desc, IsMemoryReader MemoryReader, IsTracer Tracer>
   return static_cast<bool>(tracer.success());
 };
 
+template <typename T, auto N, IsMemoryReader MemoryReader, IsTracer Tracer>
+[[nodiscard]] bool read_at(
+  RemoteValue<Primitive<std::array<T, N>>, address_t<MemoryReader>>
+    remote_value,
+  std::size_t index,
+  const MemoryReader& reader,
+  Tracer& tracer,
+  T& out
+) {
+  std::ignore = detail::read_value<Primitive<T>>(
+    remote_value.address
+      + index * byte_size<Primitive<T>, address_t<MemoryReader>>(),
+    reader,
+    tracer,
+    out
+  );
+  return static_cast<bool>(tracer.success());
+};
+
 }  // namespace mempeep
