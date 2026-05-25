@@ -47,6 +47,9 @@ primitive_compatible_size_impl.Struct = function(desc, addr_size)
   local offset = 0
   for _, item in ipairs(desc.fields) do
     if item.tag == "Skip" then
+      if item.n < 0 then
+        return nil
+      end
       offset = offset + item.n
     elseif item.tag == "Seek" then
       return nil
