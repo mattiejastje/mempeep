@@ -31,12 +31,11 @@ struct Field {
 /**
  * @brief Skip relative to the current position in the layout.
  * @tparam N Number of bytes.
- *           Its value must be representable by address_t<MemoryReader>.
  */
-template <std::size_t N>
+template <std::ptrdiff_t N>
 struct Skip {
   using fields_item_tag = void;
-  static constexpr std::size_t skip = N;
+  static constexpr std::ptrdiff_t skip = N;
 };
 
 /**
@@ -47,12 +46,11 @@ struct Skip {
  * ensure the offsets are correct.
  *
  * @tparam N The offset in bytes.
- *           Its value must be representable by address_t<MemoryReader>.
  */
-template <std::size_t N>
+template <std::ptrdiff_t N>
 struct Seek {
   using fields_item_tag = void;
-  static constexpr std::size_t seek = N;
+  static constexpr std::ptrdiff_t seek = N;
 };
 
 /**

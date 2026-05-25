@@ -79,7 +79,7 @@ template <typename T, IsFieldsItem... Items, IsAddress AddrT>
 consteval std::size_t byte_size_impl(
   Struct<T, Fields<Items...>>, AddrT
 ) noexcept {
-  std::size_t offset = 0;
+  std::ptrdiff_t offset = 0;
   (
     [&] {
       if constexpr (requires { Items::skip; })
@@ -91,7 +91,10 @@ consteval std::size_t byte_size_impl(
     }(),
     ...
   );
-  return offset;
+  // ensure compile error if size is negative
+  // note static_assert does not work with consteval, use 1 / 0 to force error
+  if (offset < 0) offset = 1 / 0;
+  return static_cast<std::size_t>(offset);
 }
 
 }  // namespace mempeep::detail

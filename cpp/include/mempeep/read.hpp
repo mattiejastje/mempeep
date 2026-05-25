@@ -14,21 +14,41 @@
 
 namespace mempeep::detail {
 
-// Abstract unsigned addition with overflow check.
-template <std::unsigned_integral S, std::unsigned_integral T>
+// Safely calculate absolute value,
+// including `numeric_limits<T>::min()` where `std::abs()` would overflow
+// when T is signed.
+template <std::integral T>
+[[nodiscard]] constexpr std::make_unsigned_t<T> unsigned_abs(T t) noexcept {
+  if constexpr (std::signed_integral<T>) {
+    // Note std::make_unsigned_t<T>(-t) is not correct.
+    // But this is correct!
+    if (t < 0) return std::make_unsigned_t<T>(0) - std::make_unsigned_t<T>(t);
+  }
+  return std::make_unsigned_t<T>(t);
+}
+
+// Abstract addition with overflow check.
+template <std::unsigned_integral S, std::integral T>
 [[nodiscard]] constexpr std::optional<S> checked_add(S s, T t) noexcept {
-  if (t > std::numeric_limits<S>::max() - s) return {};
-  return static_cast<S>(s + t);
+  // Ensure addition/subtraction/comparison only uses unsigned types.
+  // This keeps the implementation simple.
+  const auto abs_t = unsigned_abs(t);
+  if constexpr (std::signed_integral<T>) {
+    if (t < 0) {
+      if (s < abs_t) return {};
+      return static_cast<S>(s - abs_t);
+    }
+  }
+  if (abs_t > std::numeric_limits<S>::max() - s) return {};
+  return static_cast<S>(s + abs_t);
 }
 
 /**
  * @brief Advance address by n, reporting ADDRESS_OVERFLOW to tracer on failure.
  * @note Mutates tracer on overflow; always check the return value.
  */
-template <IsAddress Addr, IsTracer Tracer>
-[[nodiscard]] std::optional<Addr> try_advance(
-  Addr addr, std::size_t n, Tracer& tracer
-) {
+template <IsAddress Addr, std::integral T, IsTracer Tracer>
+[[nodiscard]] std::optional<Addr> try_advance(Addr addr, T n, Tracer& tracer) {
   auto u = checked_add(addr, n);
   if (!u) tracer.error(Error::ADDRESS_OVERFLOW);
   return u;

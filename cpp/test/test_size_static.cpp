@@ -122,4 +122,7 @@ using TOuter2 = Struct<
 
 static_assert(byte_size<TOuter2, uint32_t>() == 12);
 
+// should not compile:
+// static_assert(byte_size<Struct<int32_t, Fields<Seek<-1>>>, uint32_t>());
+
 int main() { return 0; }

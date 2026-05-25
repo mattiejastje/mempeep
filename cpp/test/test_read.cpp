@@ -251,3 +251,75 @@ TEST_CASE("RemoteAddr: inside struct, cursor advances past descriptor bytes") {
   CHECK(read(s.data, reader, tracer2, data));
   CHECK_EQ(data, 0x11223344);
 }
+
+TEST_CASE("Negative seek") {
+  struct Obj {
+    int16_t a;
+    int16_t b;
+  };
+
+  using TObj = Struct<
+    Obj,
+    Fields<Seek<-2>, Field<Int16, &Obj::a>, Field<Int16, &Obj::b>>>;
+  static_assert(byte_size<TObj, uint32_t>() == 2);
+  auto reader = test::MockMemoryReader<uint32_t>{"\x11\x00\x22\x00"};
+  Obj obj{};
+  OkTracer tracer{};
+  CHECK(read(RemoteValue<TObj, uint32_t>{2}, reader, tracer, obj));
+  CHECK_EQ(obj.a, 0x11);
+  CHECK_EQ(obj.b, 0x22);
+}
+
+TEST_CASE("Negative skip") {
+  struct Obj {
+    int32_t a;
+    int32_t b;
+  };
+  using TObj = Struct<
+    Obj,
+    Fields<Field<Int32, &Obj::a>, Skip<-2>, Field<Int32, &Obj::b>>>;
+  static_assert(byte_size<TObj, uint32_t>() == 6);
+  auto reader = test::MockMemoryReader<uint32_t>{"\x01\x00\x02\x00\x00\x00"};
+  Obj obj{};
+  OkTracer tracer{};
+  CHECK(read(RemoteValue<TObj, uint32_t>{0}, reader, tracer, obj));
+  CHECK_EQ(obj.a, 0x020001);
+  CHECK_EQ(obj.b, 0x02);
+}
+
+TEST_CASE("Seek underflow") {
+  struct Obj {
+    int32_t a;
+  };
+  using TObj = Struct<Obj, Fields<Seek<-1>, Field<Int32, &Obj::a>>>;
+  static_assert(byte_size<TObj, uint32_t>() == 3);
+  auto reader = test::MockMemoryReader<uint32_t>{"\x01\x00\x00\x00"};
+  Obj obj{};
+  OkTracer tracer{};
+  CHECK(!read(RemoteValue<TObj, uint32_t>{0}, reader, tracer, obj));
+}
+
+TEST_CASE("Skip underflow") {
+  struct Obj {
+    int32_t a;
+  };
+  using TObj = Struct<Obj, Fields<Field<Int32, &Obj::a>, Skip<-8>, Seek<4>>>;
+  static_assert(byte_size<TObj, uint32_t>() == 4);
+  auto reader = test::MockMemoryReader<uint32_t>{"\x01\x00\x00\x00"};
+  Obj obj{};
+  OkTracer tracer{};
+  CHECK(!read(RemoteValue<TObj, uint32_t>{0}, reader, tracer, obj));
+}
+
+TEST_CASE("Skip overflow") {
+  struct Obj {
+    int32_t a;
+  };
+
+  using TObj = Struct<Obj, Fields<Field<Int32, &Obj::a>, Skip<256>>>;
+  static_assert(byte_size<TObj, uint8_t>() == 260);
+  auto reader = test::MockMemoryReader<uint8_t>{"\x01\x00\x00\x00"};
+  Obj obj{};
+  OkTracer tracer{};
+  CHECK(!read(RemoteValue<TObj, uint8_t>{0}, reader, tracer, obj));
+}
