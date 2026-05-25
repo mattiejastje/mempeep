@@ -315,7 +315,6 @@ TEST_CASE("Skip overflow") {
   struct Obj {
     int32_t a;
   };
-
   using TObj = Struct<Obj, Fields<Field<Int32, &Obj::a>, Skip<256>>>;
   static_assert(byte_size<TObj, uint8_t>() == 260);
   auto reader = test::MockMemoryReader<uint8_t>{"\x01\x00\x00\x00"};
