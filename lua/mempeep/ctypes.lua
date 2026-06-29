@@ -319,12 +319,12 @@ remote_ctype_impl.Struct = function(desc, addr_size)
 end
 
 native_ctype_impl.Struct = function(desc, addr_size, namespace)
-  return desc.name
+  return desc.native_name
 end
 
 mempeep_ctype_impl.Struct = function(desc, addr_size, namespace)
   if primitive_compatible_size(desc, addr_size) then
-    return namespace .. "Primitive<" .. desc.name .. ">"
+    return namespace .. "Primitive<" .. desc.native_name .. ">"
   else
     return "T" .. desc.name
   end
@@ -353,9 +353,11 @@ function M.remote_struct_cdecl(desc, addr_size, out)
   out:write("};\n\n")
 end
 
-local native_struct_cdecl_1 = function(desc, addr_size, namespace, out)
+local native_struct_cdecl_1 = function(desc, addr_size, namespace, out, native_visited)
   assert(desc.tag == "Struct", "descriptor must be Struct, but got " .. tostring(desc.tag))
-  out:write(string.format("struct %s {\n", desc.name))
+  if native_visited[desc.native_name] then return end
+  native_visited[desc.native_name] = true
+  out:write(string.format("struct %s {\n", desc.native_name))
   if primitive_compatible_size(desc, addr_size) then
     local offset = 0
     local pad_index = 0
@@ -391,7 +393,7 @@ local native_struct_cdecl_2 = function(desc, addr_size, namespace, out)
     return
   end
   out:write("using T" .. desc.name .. " = " .. namespace .. "Struct<\n")
-  out:write("  " .. desc.name .. ",\n")
+  out:write("  " .. desc.native_name .. ",\n")
   out:write("  " .. namespace .. "Fields<\n")
   for i, item in ipairs(desc.fields) do
     local is_last = (i == #desc.fields)
@@ -402,13 +404,13 @@ local native_struct_cdecl_2 = function(desc, addr_size, namespace, out)
       out:write(string.format("    %sSeek<%s>%s", namespace, hex_str(item.n), comma))
     elseif item.tag == "Field" then
       local mtype = M.mempeep_ctype(item.desc, addr_size, namespace)
-      out:write(string.format("    %sField<%s, &%s::%s>%s", namespace, mtype, desc.name, item.key, comma))
+      out:write(string.format("    %sField<%s, &%s::%s>%s", namespace, mtype, desc.native_name, item.key, comma))
     end
   end
 end
 
-function M.native_struct_cdecl(desc, addr_size, namespace, out)
-  native_struct_cdecl_1(desc, addr_size, namespace, out)
+function M.native_struct_cdecl(desc, addr_size, namespace, out, native_visited)
+  native_struct_cdecl_1(desc, addr_size, namespace, out, native_visited)
   native_struct_cdecl_2(desc, addr_size, namespace, out)
 end
 
@@ -480,8 +482,9 @@ end
 -- @param descs descriptors to collect structs from
 -- @param out output stream
 function M.native_struct_cdecls(descs, addr_size, namespace, out)
+  local native_visited = {}
   each_struct(descs, function(s)
-    M.native_struct_cdecl(s, addr_size, namespace, out)
+    M.native_struct_cdecl(s, addr_size, namespace, out, native_visited)
   end)
 end
 

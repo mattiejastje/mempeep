@@ -234,8 +234,14 @@ end
 --- Read a struct by applying a sequence of field items in order.
 -- @param ... Items produced by `Field()`, `Skip()`, or `Seek()`
 -- @return Struct descriptor
-function M.Struct(name, fields)
-  return { tag = "Struct", name = name, fields = M.assert_fields(fields) }
+function M.Struct(name, fields, opts)
+  opts = opts or {}
+  return {
+    tag = "Struct",
+    name = name,
+    native_name = opts.native_name or name,
+    fields = M.assert_fields(fields),
+  }
 end
 
 --- Read a descriptor and note an error if the value is out of bounds.
