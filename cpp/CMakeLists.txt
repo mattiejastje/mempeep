@@ -1,4 +1,7 @@
 add_library(mempeep INTERFACE)
+
+option(MEMPEEP_USE_FMTLIB "Use fmt::formatter instead of std::formatter in log_tracer.hpp" OFF)
+
 target_include_directories(mempeep INTERFACE include)
 target_compile_features(mempeep INTERFACE cxx_std_23)
 
